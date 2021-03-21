@@ -1,5 +1,7 @@
 # :construction: :cat:Comcat :construction:
 
+> Currently WIP. Not for production purpose.
+
 Share single connection between multiple browser tabs/windows and more.
 
 ## Features
