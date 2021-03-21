@@ -4,13 +4,16 @@ import {
   ComcatTransportMode,
 } from '../type';
 import Worker from 'web-worker:../worker/index';
+import { Debug } from './debug';
+
+const debug = new Debug('comcat-transport');
 
 export function getTransport(mode: ComcatTransportMode): ComcatTransport {
   if (mode === 'SharedWorker') {
     return new ComcatTransportSharedWorker();
   }
 
-  throw new Error(`No such transport implement for "${mode}".`);
+  return debug.panic(`No such transport implement for "${mode}".`);
 }
 
 export class ComcatTransportSharedWorker implements ComcatTransport {
@@ -32,7 +35,7 @@ export class ComcatTransportSharedWorker implements ComcatTransport {
   }
 
   public postMessage(message: any) {
-    console.log(`[out]`, message);
+    debug.log(`[out]`, message);
 
     this.worker.port.postMessage(message);
   }
@@ -40,7 +43,7 @@ export class ComcatTransportSharedWorker implements ComcatTransport {
   private onPortMessage(event: MessageEvent<any>) {
     const message = event.data as ComcatRPCProtocal;
 
-    console.log(`[in]`, message);
+    debug.log(`[in]`, message);
 
     this.onMessage(message);
   }

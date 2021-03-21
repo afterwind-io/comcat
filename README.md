@@ -31,6 +31,18 @@ yarn add comcat
 
 TODO
 
+### Debug
+
+Comcat will log every message through the transport, and some basic status information to the console. By default, these output is suppressed. 
+
+You can opt into seeing them by setting a `localStorage` key `__comcat_debug__` like following:
+
+```javascript
+localStorage.setItem('__comcat_debug__', 'verbose');
+```
+
+If you choose `SharedWebworker` as the transport implementation, the output from the worker is always complete.
+
 ## How it works
 
 ### Pump
@@ -56,7 +68,7 @@ NO.
 ## Todos
 
 - [x] ~~Move topic filtering of pipe to the worker;~~
-- [ ] Only output debug info during dev;
+- [x] Only output debug info if enabled;
 - [ ] 通过全局变量确保用户无法创建多个相同`category`的`pump`
 - [ ] 通过心跳检测`pump`所处页面是否已关闭，防止`pump`意外终止没有正确注销的情况
 

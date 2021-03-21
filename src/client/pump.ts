@@ -6,6 +6,9 @@ import {
 } from '../type';
 import { ComcatRPC } from './rpc';
 import { getTransport } from './transport';
+import { Debug } from './debug';
+
+const debug = new Debug('comcat-pump');
 
 interface ComcatPumpOptions {
   category: string;
@@ -66,7 +69,7 @@ export abstract class ComcatPump {
 
       return true;
     } catch (error) {
-      console.error(error);
+      debug.error(error);
 
       return false;
     }
@@ -107,7 +110,7 @@ export abstract class ComcatPump {
     this.connect();
     this.status = 'working';
 
-    console.log(`pump "${this.category}" activated.`);
+    debug.log(`pump "${this.category}" activated.`);
   }
 
   private onDispose() {
