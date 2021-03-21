@@ -37,10 +37,14 @@ export abstract class ComcatPipe {
     }
 
     try {
+      const topic = this.topic;
+      const topicFilter = typeof topic === 'string' ? topic : topic.source;
+
       await this.rpc.call({
         name: 'pipe_register',
         params: {
           id: this.id,
+          topic: topicFilter,
         },
       });
 
@@ -76,16 +80,6 @@ export abstract class ComcatPipe {
 
   private onReceive(cmd: ComcatCommandPipeReceive) {
     const { topic, data } = cmd.params;
-
-    const filter = this.topic;
-    if (typeof filter === 'string') {
-      if (filter !== topic) {
-        return;
-      }
-    } else if (!filter.test(topic)) {
-      return;
-    }
-
     this.onMessage(topic, data);
   }
 }

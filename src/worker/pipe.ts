@@ -9,6 +9,7 @@ import {
 
 interface ComcatPipeRegistry {
   id: number;
+  topic: RegExp;
   rpc: ComcatRPC<ComcatCommands, any>;
 }
 
@@ -16,7 +17,14 @@ export class ComcatPipeScheduler {
   private pipes: ComcatPipeRegistry[] = [];
 
   public broadcast(message: ComcatBroadcastMessage) {
+    const topic = message.topic;
+
     for (const pipe of this.pipes) {
+      const topicFilter = pipe.topic;
+      if (!topicFilter.test(topic)) {
+        continue;
+      }
+
       const command: ComcatCommandPipeReceive = {
         name: 'pipe_receive',
         oneshot: true,
@@ -31,15 +39,17 @@ export class ComcatPipeScheduler {
     rpc: ComcatRPC<ComcatCommands, any>,
     cmd: ComcatCommandPipeRegister
   ): boolean {
-    const { id } = cmd.params;
+    const { id, topic } = cmd.params;
 
     const pipe = this.pipes.find((p) => p.id === id);
     if (pipe) {
       return false;
     }
 
+    const topicFilter = new RegExp(topic);
     const registry: ComcatPipeRegistry = {
       id,
+      topic: topicFilter,
       rpc,
     };
     this.pipes.push(registry);
