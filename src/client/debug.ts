@@ -1,3 +1,5 @@
+import { global } from './global';
+
 export const enum DebugLevel {
   Silence,
   Error,
@@ -5,29 +7,6 @@ export const enum DebugLevel {
   Log,
   Verbose,
 }
-
-const DEBUG_LEVEL = (function () {
-  try {
-    const level = localStorage.getItem('__comcat_debug__');
-
-    switch (level) {
-      case 'silence':
-        return DebugLevel.Silence;
-      case 'error':
-        return DebugLevel.Error;
-      case 'warn':
-        return DebugLevel.Warn;
-      case 'log':
-        return DebugLevel.Log;
-      case 'verbose':
-        return DebugLevel.Verbose;
-      default:
-        return DebugLevel.Silence;
-    }
-  } catch (error) {
-    return DebugLevel.Silence;
-  }
-})();
 
 export class Debug {
   private prefix: string;
@@ -37,7 +16,7 @@ export class Debug {
   }
 
   public log(message?: any, ...optionalParams: any[]) {
-    if (DEBUG_LEVEL < DebugLevel.Log) {
+    if (global.debugLevel < DebugLevel.Log) {
       return;
     }
 
@@ -45,7 +24,7 @@ export class Debug {
   }
 
   public warn(message?: any, ...optionalParams: any[]) {
-    if (DEBUG_LEVEL < DebugLevel.Warn) {
+    if (global.debugLevel < DebugLevel.Warn) {
       return;
     }
 
@@ -53,7 +32,7 @@ export class Debug {
   }
 
   public error(message?: any, ...optionalParams: any[]) {
-    if (DEBUG_LEVEL < DebugLevel.Error) {
+    if (global.debugLevel < DebugLevel.Error) {
       return;
     }
 

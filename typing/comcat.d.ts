@@ -44,3 +44,15 @@ export declare abstract class ComcatPump {
   private onOpen;
   private onDispose;
 }
+
+export declare const Comcat: {
+  /**
+   * Determines whether enabling the full debug logging,
+   * including inner status and transport information.
+   *
+   * May output too much logs, so be careful.
+   *
+   * @param {boolean} flag
+   */
+  enableDebug(flag: boolean): void;
+};
