@@ -1,8 +1,5 @@
-export declare type ComcatTransportMode = 'SharedWorker';
-
 interface ComcatPipeOptions {
   topic: string | RegExp;
-  transport: ComcatTransportMode;
 }
 
 export declare abstract class ComcatPipe {
@@ -24,7 +21,6 @@ export declare type ComcatPumpMode = 'standalone' | 'unique';
 interface ComcatPumpOptions {
   category: string;
   mode: ComcatPumpMode;
-  transport: ComcatTransportMode;
 }
 
 export declare abstract class ComcatPump {
@@ -45,14 +41,35 @@ export declare abstract class ComcatPump {
   private onDispose;
 }
 
+type ComcatWorkingMode = 'default' | 'legacy' | 'direct';
+
 export declare const Comcat: {
   /**
    * Determines whether enabling the full debug logging,
    * including inner status and transport information.
    *
-   * May output too much logs, so be careful.
+   * May output enormous content, so be careful.
    *
    * @param {boolean} flag
    */
   enableDebug(flag: boolean): void;
+  /**
+   * Specify the underlying implementation.
+   *
+   * - "default": use `SharedWebworker`. The *default* behavior;
+   * - "legacy": **DO NOT USE** Not implemented yet;
+   * - "direct": use tab-isolated messaging. See below;
+   *
+   * By default `Comcat` uses `SharedWebworker` to share connection and send
+   * messages across tabs/windows. If `SharedWebworker` is not supported,
+   * `Comcat` will fall back to the `direct` mode.
+   *
+   * When running in `direct` Mode, all cross-tab features are disabled due to
+   * lack of cross-tab ability. The connection activated by `pump` is created
+   * per tab. The messages sent by `pump` are broadcasted back to the pipes
+   * on the same tab. Thus, it behaves just like a normal event bus.
+   *
+   * @param {ComcatWorkingMode} mode
+   */
+  setMode(mode: ComcatWorkingMode): void;
 };

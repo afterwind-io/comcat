@@ -1,9 +1,4 @@
-import {
-  ComcatCommands,
-  ComcatCommandReplys,
-  ComcatPumpMode,
-  ComcatTransportMode,
-} from '../type';
+import { ComcatCommands, ComcatCommandReplys, ComcatPumpMode } from '../type';
 import { ComcatRPC } from './rpc';
 import { getTransport } from './transport';
 import { Debug } from './debug';
@@ -13,7 +8,6 @@ const debug = new Debug('comcat-pump');
 interface ComcatPumpOptions {
   category: string;
   mode: ComcatPumpMode;
-  transport: ComcatTransportMode;
 }
 
 export abstract class ComcatPump {
@@ -24,12 +18,12 @@ export abstract class ComcatPump {
   private status: 'idle' | 'pending' | 'working' = 'idle';
 
   public constructor(options: ComcatPumpOptions) {
-    const { category, mode, transport } = options;
+    const { category, mode } = options;
 
     this.category = category;
     this.mode = mode;
 
-    this.rpc = new ComcatRPC(getTransport(transport));
+    this.rpc = new ComcatRPC(getTransport());
     this.rpc.onRemoteCall = this.onCall.bind(this);
 
     this.id = Date.now();

@@ -31,6 +31,18 @@ yarn add comcat
 
 TODO
 
+### Compatibility
+
+TODO - `SharedWorker`
+
+You can manually switch to "direct" mode using `Comcat.setMode`:
+
+```javascript
+import { Comcat } from 'comcat';
+
+Comcat.setMode('direct');
+```
+
 ### Debug
 
 Comcat will log every message through the transport, and some basic status information to the console. By default, these output is suppressed.

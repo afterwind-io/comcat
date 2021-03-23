@@ -1,50 +1,28 @@
-import {
-  ComcatRPCProtocal,
-  ComcatTransport,
-  ComcatTransportMode,
-} from '../type';
-import Worker from 'web-worker:../worker/index';
+import { ComcatTransport } from '../type';
 import { Debug } from './debug';
+import { global } from './global';
+import { ComcatTransportDirect } from './impl/direct';
+import { ComcatTransportSharedWorker } from './impl/worker';
 
 const debug = new Debug('comcat-transport');
 
-export function getTransport(mode: ComcatTransportMode): ComcatTransport {
-  if (mode === 'SharedWorker') {
-    return new ComcatTransportSharedWorker();
+export function getTransport(): ComcatTransport {
+  if (global.mode === 'default') {
+    if (window.SharedWorker) {
+      return new ComcatTransportSharedWorker();
+    }
+
+    debug.warn('SharedWorker is not supported. Fall back to direct mode.');
+    return new ComcatTransportDirect();
   }
 
-  return debug.panic(`No such transport implement for "${mode}".`);
-}
-
-export class ComcatTransportSharedWorker implements ComcatTransport {
-  public onMessage: (message: ComcatRPCProtocal) => void = () => {};
-
-  private readonly worker: SharedWorker;
-
-  public constructor() {
-    this.worker = new Worker();
-    this.worker.port.onmessage = this.onPortMessage.bind(this);
+  if (global.mode === 'legacy') {
+    return debug.panic(`Not implemented.`);
   }
 
-  public connect() {
-    this.worker.port.start();
+  if (global.mode === 'direct') {
+    return new ComcatTransportDirect();
   }
 
-  public disconnect() {
-    this.worker.port.close();
-  }
-
-  public postMessage(message: any) {
-    debug.log(`[out]`, message);
-
-    this.worker.port.postMessage(message);
-  }
-
-  private onPortMessage(event: MessageEvent<any>) {
-    const message = event.data as ComcatRPCProtocal;
-
-    debug.log(`[in]`, message);
-
-    this.onMessage(message);
-  }
+  return debug.panic(`No such mode for "${global.mode}".`);
 }

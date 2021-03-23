@@ -1,6 +1,9 @@
 // @ts-check
 
-import { ComcatPump, ComcatPipe } from './comcat/index.js';
+import { Comcat, ComcatPump, ComcatPipe } from './comcat/index.js';
+
+Comcat.enableDebug(true);
+// Comcat.setMode("direct");
 
 class MockPollingPump extends ComcatPump {
   interval = 1000;
@@ -39,12 +42,10 @@ class MockPipe extends ComcatPipe {
 const pump = new MockPollingPump({
   category: 'mock',
   mode: 'unique',
-  transport: 'SharedWorker',
 });
 pump.start();
 
 const pipe = new MockPipe({
   topic: 'Doge',
-  transport: 'SharedWorker',
 });
 pipe.start();

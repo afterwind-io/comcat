@@ -2,14 +2,12 @@ import {
   ComcatCommands,
   ComcatCommandReplys,
   ComcatCommandPipeReceive,
-  ComcatTransportMode,
 } from '../type';
 import { ComcatRPC } from './rpc';
 import { getTransport } from './transport';
 
 interface ComcatPipeOptions {
   topic: string | RegExp;
-  transport: ComcatTransportMode;
 }
 
 export abstract class ComcatPipe {
@@ -19,11 +17,11 @@ export abstract class ComcatPipe {
   private status: 'idle' | 'working' = 'idle';
 
   public constructor(options: ComcatPipeOptions) {
-    const { topic, transport } = options;
+    const { topic } = options;
 
     this.topic = topic;
 
-    this.rpc = new ComcatRPC(getTransport(transport));
+    this.rpc = new ComcatRPC(getTransport());
     this.rpc.onRemoteCall = this.onCall.bind(this);
 
     this.id = Date.now();
