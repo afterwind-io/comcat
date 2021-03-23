@@ -1,6 +1,6 @@
 {
   "name": "comcat",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Share single connection between multiple browser tabs/windows and more.",
   "repository": {
     "type": "git",
