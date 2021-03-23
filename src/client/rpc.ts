@@ -2,7 +2,7 @@ import { ComcatRPCCommand, ComcatRPCProtocal, ComcatTransport } from '../type';
 
 const DEFAULT_TIMEOUT = 1000 * 60;
 
-type DeferedCallback = (data: any) => void;
+type DeferredCallback = (data: any) => void;
 
 interface ComcatRPCOptions {
   timeout?: number;
@@ -17,7 +17,7 @@ export class ComcatRPC<
     reply: (payload: any) => void
   ) => void = () => {};
 
-  private readonly callbacks: { [ack: number]: DeferedCallback } = {};
+  private readonly callbacks: { [ack: number]: DeferredCallback } = {};
   private readonly timeout: number;
   private readonly transport: ComcatTransport;
   private ack: number = -1;
@@ -31,6 +31,7 @@ export class ComcatRPC<
 
     this.transport = transport;
     transport.onMessage = this.onMessage.bind(this);
+    transport.connect();
   }
 
   // TODO 返回类型
@@ -49,16 +50,17 @@ export class ComcatRPC<
     }
 
     return Promise.race([
-      this.createDeferedPromise(ack),
+      this.createDeferredPromise(ack),
       this.createTimeoutPromise(),
     ]);
   }
 
   public close() {
     this.transport.disconnect();
+    this.transport.onMessage = () => {};
   }
 
-  private createDeferedPromise(ack: number): Promise<unknown> {
+  private createDeferredPromise(ack: number): Promise<unknown> {
     return new Promise((resolve) => {
       this.callbacks[ack] = resolve;
     });
@@ -73,25 +75,22 @@ export class ComcatRPC<
     });
   }
 
-  private onCall(
-    message: ComcatRPCProtocal,
-    reply: (msg: ComcatRPCProtocal) => void
-  ) {
-    const out = (payload: any) => {
-      const res: ComcatRPCProtocal = {
+  private onCall(message: ComcatRPCProtocal) {
+    const reply = (payload: any) => {
+      const msg: ComcatRPCProtocal = {
         ack: message.ack,
         type: 'reply',
         payload,
       };
 
-      reply(res);
+      this.transport.postMessage(msg);
     };
 
-    this.onRemoteCall(message.payload as C, out);
+    this.onRemoteCall(message.payload as C, reply);
   }
 
   private onReply(message: ComcatRPCProtocal) {
-    const callback = this.popDeferedCallback(message.ack);
+    const callback = this.popDeferredCallback(message.ack);
     if (!callback) {
       return;
     }
@@ -100,13 +99,9 @@ export class ComcatRPC<
   }
 
   private onMessage(message: ComcatRPCProtocal) {
-    const reply = (msg: ComcatRPCProtocal) => {
-      this.transport.postMessage(msg);
-    };
-
     switch (message.type) {
       case 'call':
-        return this.onCall(message, reply);
+        return this.onCall(message);
       case 'reply':
         return this.onReply(message);
       default:
@@ -115,7 +110,7 @@ export class ComcatRPC<
     }
   }
 
-  private popDeferedCallback(ack: number): DeferedCallback | null {
+  private popDeferredCallback(ack: number): DeferredCallback | null {
     const callback = this.callbacks[ack];
     if (!callback) {
       return null;
