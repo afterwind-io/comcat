@@ -1,11 +1,11 @@
-import { DebugLevel } from './debug';
+import { DebugLevel, DEBUG_SILENCE, DEBUG_VERBOSE, DEBUG_WARN } from './consts';
 
 interface ComcatGlobal {
   debugLevel: DebugLevel;
 }
 
 export const global: ComcatGlobal = {
-  debugLevel: DebugLevel.Warn,
+  debugLevel: DEBUG_WARN,
 };
 
 export const ComcatGlobal = {
@@ -18,6 +18,6 @@ export const ComcatGlobal = {
    * @param {boolean} flag
    */
   enableDebug(flag: boolean) {
-    global.debugLevel = flag ? DebugLevel.Verbose : DebugLevel.Silence;
+    global.debugLevel = flag ? DEBUG_VERBOSE : DEBUG_SILENCE;
   },
 };

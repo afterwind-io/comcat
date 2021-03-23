@@ -1,12 +1,5 @@
 import { global } from './global';
-
-export const enum DebugLevel {
-  Silence,
-  Error,
-  Warn,
-  Log,
-  Verbose,
-}
+import { DEBUG_ERROR, DEBUG_WARN, DEBUG_LOG } from './consts';
 
 export class Debug {
   private prefix: string;
@@ -16,7 +9,7 @@ export class Debug {
   }
 
   public log(message?: any, ...optionalParams: any[]) {
-    if (global.debugLevel < DebugLevel.Log) {
+    if (global.debugLevel < DEBUG_LOG) {
       return;
     }
 
@@ -24,7 +17,7 @@ export class Debug {
   }
 
   public warn(message?: any, ...optionalParams: any[]) {
-    if (global.debugLevel < DebugLevel.Warn) {
+    if (global.debugLevel < DEBUG_WARN) {
       return;
     }
 
@@ -32,7 +25,7 @@ export class Debug {
   }
 
   public error(message?: any, ...optionalParams: any[]) {
-    if (global.debugLevel < DebugLevel.Error) {
+    if (global.debugLevel < DEBUG_ERROR) {
       return;
     }
 
