@@ -11,7 +11,7 @@ import {
 } from '../type';
 
 interface ComcatPumpRegistry {
-  id: number;
+  id: string;
   mode: ComcatPumpMode;
   category: string;
   rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
@@ -20,7 +20,7 @@ interface ComcatPumpRegistry {
 export class ComcatPumpScheduler {
   public onBroadcast: (message: ComcatBroadcastMessage) => void = () => {};
 
-  private activeUniquePumpIds: { [category: string]: number | undefined } = {};
+  private activeUniquePumpIds: { [category: string]: string | undefined } = {};
   private pumps: ComcatPumpRegistry[] = [];
 
   public register(

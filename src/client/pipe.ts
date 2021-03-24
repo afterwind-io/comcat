@@ -5,13 +5,14 @@ import {
 } from '../type';
 import { ComcatRPC } from './rpc';
 import { getTransport } from './transport';
+import { getUniqueId } from './util';
 
 interface ComcatPipeOptions {
   topic: string | RegExp;
 }
 
 export abstract class ComcatPipe {
-  private readonly id: number;
+  private readonly id: string;
   private readonly rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
   private readonly topic: string | RegExp;
   private status: 'idle' | 'working' = 'idle';
@@ -24,7 +25,7 @@ export abstract class ComcatPipe {
     this.rpc = new ComcatRPC(getTransport());
     this.rpc.onRemoteCall = this.onCall.bind(this);
 
-    this.id = Date.now();
+    this.id = getUniqueId();
 
     window.addEventListener('unload', this.onDispose.bind(this));
   }

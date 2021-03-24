@@ -9,7 +9,7 @@ import {
 } from '../type';
 
 interface ComcatPipeRegistry {
-  id: number;
+  id: string;
   topic: RegExp;
   rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
 }

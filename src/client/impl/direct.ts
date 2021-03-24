@@ -14,7 +14,7 @@ import { ComcatRPC } from '../rpc';
 const debug = new Debug('comcat-transport-direct');
 
 interface ComcatPipeRegistry {
-  id: number;
+  id: string;
   topic: RegExp;
   rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
 }

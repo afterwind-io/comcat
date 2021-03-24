@@ -2,6 +2,7 @@ import { ComcatCommands, ComcatCommandReplies, ComcatPumpMode } from '../type';
 import { ComcatRPC } from './rpc';
 import { getTransport } from './transport';
 import { Debug } from './debug';
+import { getUniqueId } from './util';
 
 const debug = new Debug('comcat-pump');
 
@@ -12,7 +13,7 @@ interface ComcatPumpOptions {
 
 export abstract class ComcatPump {
   private readonly category: string;
-  private readonly id: number;
+  private readonly id: string;
   private readonly mode: ComcatPumpMode;
   private readonly rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
   private status: 'idle' | 'pending' | 'working' = 'idle';
@@ -26,7 +27,7 @@ export abstract class ComcatPump {
     this.rpc = new ComcatRPC(getTransport());
     this.rpc.onRemoteCall = this.onCall.bind(this);
 
-    this.id = Date.now();
+    this.id = getUniqueId();
 
     window.addEventListener('unload', this.onDispose.bind(this));
   }

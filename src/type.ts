@@ -34,7 +34,7 @@ export type ComcatCommandReplyPing = {
 export interface ComcatCommandPumpRegister {
   name: 'pump_register';
   params: {
-    id: number;
+    id: string;
     mode: ComcatPumpMode;
     category: string;
   };
@@ -46,7 +46,7 @@ export type ComcatCommandReplyPumpRegister = {
 export interface ComcatCommandPumpOpen {
   name: 'pump_open';
   params: {
-    id: number;
+    id: string;
     mode: ComcatPumpMode;
     category: string;
   };
@@ -59,7 +59,7 @@ export interface ComcatCommandPumpClose {
   name: 'pump_close';
   oneshot: true;
   params: {
-    id: number;
+    id: string;
     category: string;
   };
 }
@@ -79,7 +79,7 @@ export type ComcatCommandReplyPumpEmit = {
 export interface ComcatCommandPipeRegister {
   name: 'pipe_register';
   params: {
-    id: number;
+    id: string;
     topic: string;
   };
 }
@@ -100,7 +100,7 @@ export interface ComcatCommandPipeClose {
   name: 'pipe_close';
   oneshot: true;
   params: {
-    id: number;
+    id: string;
   };
 }
 export type ComcatCommandReplyPipeClose = {
