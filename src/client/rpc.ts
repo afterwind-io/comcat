@@ -34,8 +34,7 @@ export class ComcatRPC<
     transport.connect();
   }
 
-  // TODO 返回类型
-  public call(command: C): Promise<unknown> {
+  public call<CC extends C>(command: CC): Promise<R[CC['name']]> {
     const ack = ++this.ack;
 
     const msg: ComcatRPCProtocal = {
@@ -46,13 +45,13 @@ export class ComcatRPC<
     this.transport.postMessage(msg);
 
     if (command.oneshot) {
-      return Promise.resolve();
+      return Promise.resolve() as Promise<never>;
     }
 
     return Promise.race([
       this.createDeferredPromise(ack),
       this.createTimeoutPromise(),
-    ]);
+    ]) as Promise<any>;
   }
 
   public close() {

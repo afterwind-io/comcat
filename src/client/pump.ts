@@ -1,4 +1,4 @@
-import { ComcatCommands, ComcatCommandReplys, ComcatPumpMode } from '../type';
+import { ComcatCommands, ComcatCommandReplies, ComcatPumpMode } from '../type';
 import { ComcatRPC } from './rpc';
 import { getTransport } from './transport';
 import { Debug } from './debug';
@@ -14,7 +14,7 @@ export abstract class ComcatPump {
   private readonly category: string;
   private readonly id: number;
   private readonly mode: ComcatPumpMode;
-  private readonly rpc: ComcatRPC<ComcatCommands, ComcatCommandReplys>;
+  private readonly rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
   private status: 'idle' | 'pending' | 'working' = 'idle';
 
   public constructor(options: ComcatPumpOptions) {
@@ -77,9 +77,7 @@ export abstract class ComcatPump {
   protected abstract disconnect(): void;
   protected abstract dispose(): void;
 
-  protected pump(topic: string, data: any): Promise<boolean> {
-    // FIXME 返回类型
-    // @ts-ignore
+  protected pump(topic: string, data: any): Promise<never> {
     return this.rpc.call({
       name: 'pump_emit',
       oneshot: true,

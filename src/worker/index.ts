@@ -1,4 +1,4 @@
-import { ComcatCommands } from '../type';
+import { ComcatCommandReplies, ComcatCommands } from '../type';
 import { ComcatRPC } from '../client/rpc';
 import { ComcatPipeScheduler } from './pipe';
 import { ComcatPumpScheduler } from './pump';
@@ -21,7 +21,9 @@ pumpScheduler.onBroadcast = pipeSchedueler.broadcast.bind(pipeSchedueler);
 worker.onconnect = (e: MessageEvent<any>) => {
   const port = e.ports[0];
 
-  const rpc = new ComcatRPC<ComcatCommands, any>(new Transport(port));
+  const rpc = new ComcatRPC<ComcatCommands, ComcatCommandReplies>(
+    new Transport(port)
+  );
   rpc.onRemoteCall = (msg, reply) => {
     switch (msg.name) {
       case 'pump_register':

@@ -5,6 +5,7 @@ import {
   ComcatCommandPumpEmit,
   ComcatCommandPumpOpen,
   ComcatCommandPumpRegister,
+  ComcatCommandReplies,
   ComcatCommands,
   ComcatPumpMode,
 } from '../type';
@@ -13,7 +14,7 @@ interface ComcatPumpRegistry {
   id: number;
   mode: ComcatPumpMode;
   category: string;
-  rpc: ComcatRPC<ComcatCommands, any>;
+  rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
 }
 
 export class ComcatPumpScheduler {
@@ -23,7 +24,7 @@ export class ComcatPumpScheduler {
   private pumps: ComcatPumpRegistry[] = [];
 
   public register(
-    rpc: ComcatRPC<ComcatCommands, any>,
+    rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>,
     cmd: ComcatCommandPumpRegister
   ): boolean {
     const { id, category, mode } = cmd.params;

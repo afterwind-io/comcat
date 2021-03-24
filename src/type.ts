@@ -5,8 +5,6 @@ export interface ComcatTransport {
   postMessage(message: any): void;
 }
 
-export type ComcatTransportMode = 'SharedWorker';
-
 export interface ComcatRPCProtocal {
   ack: number;
   type: 'call' | 'reply';
@@ -119,13 +117,11 @@ export type ComcatCommands =
   | ComcatCommandPipeReceive
   | ComcatCommandPipeClose;
 
-export type ComcatCommandReplys = {
-  ping: boolean;
-  pump_register: boolean;
-  pump_open: number;
-  pump_close: never;
-  pump_emit: never;
-  pipe_register: boolean;
-  pipe_receive: never;
-  pipe_close: never;
-};
+export type ComcatCommandReplies = ComcatCommandReplyPing &
+  ComcatCommandReplyPumpRegister &
+  ComcatCommandReplyPumpOpen &
+  ComcatCommandReplyPumpClose &
+  ComcatCommandReplyPumpEmit &
+  ComcatCommandReplyPipeRegister &
+  ComcatCommandReplyPipeReceive &
+  ComcatCommandReplyPipeClose;

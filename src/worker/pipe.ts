@@ -4,13 +4,14 @@ import {
   ComcatCommandPipeClose,
   ComcatCommandPipeReceive,
   ComcatCommandPipeRegister,
+  ComcatCommandReplies,
   ComcatCommands,
 } from '../type';
 
 interface ComcatPipeRegistry {
   id: number;
   topic: RegExp;
-  rpc: ComcatRPC<ComcatCommands, any>;
+  rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
 }
 
 export class ComcatPipeScheduler {
@@ -36,7 +37,7 @@ export class ComcatPipeScheduler {
   }
 
   public register(
-    rpc: ComcatRPC<ComcatCommands, any>,
+    rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>,
     cmd: ComcatCommandPipeRegister
   ): boolean {
     const { id, topic } = cmd.params;

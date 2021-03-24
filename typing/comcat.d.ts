@@ -35,7 +35,7 @@ export declare abstract class ComcatPump {
   protected abstract connect(): void;
   protected abstract disconnect(): void;
   protected abstract dispose(): void;
-  protected pump(topic: string, data: any): Promise<boolean>;
+  protected pump(topic: string, data: any): Promise<never>;
   private onCall;
   private onOpen;
   private onDispose;

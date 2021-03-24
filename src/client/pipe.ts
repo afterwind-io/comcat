@@ -1,6 +1,6 @@
 import {
   ComcatCommands,
-  ComcatCommandReplys,
+  ComcatCommandReplies,
   ComcatCommandPipeReceive,
 } from '../type';
 import { ComcatRPC } from './rpc';
@@ -12,7 +12,7 @@ interface ComcatPipeOptions {
 
 export abstract class ComcatPipe {
   private readonly id: number;
-  private readonly rpc: ComcatRPC<ComcatCommands, ComcatCommandReplys>;
+  private readonly rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
   private readonly topic: string | RegExp;
   private status: 'idle' | 'working' = 'idle';
 

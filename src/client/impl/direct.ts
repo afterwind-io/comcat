@@ -3,6 +3,7 @@ import {
   ComcatCommandPipeReceive,
   ComcatCommandPipeRegister,
   ComcatCommandPumpEmit,
+  ComcatCommandReplies,
   ComcatCommands,
   ComcatRPCProtocal,
   ComcatTransport,
@@ -15,7 +16,7 @@ const debug = new Debug('comcat-transport-direct');
 interface ComcatPipeRegistry {
   id: number;
   topic: RegExp;
-  rpc: ComcatRPC<ComcatCommands, any>;
+  rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
 }
 
 class DirectScheduler {
@@ -27,7 +28,7 @@ class DirectScheduler {
   }
 
   public connect(transport: ComcatTransportDirectScehdulerProxy) {
-    const rpc = new ComcatRPC<ComcatCommands, any>(transport);
+    const rpc = new ComcatRPC<ComcatCommands, ComcatCommandReplies>(transport);
     rpc.onRemoteCall = (msg, reply) => this.onRegister(rpc, msg, reply);
   }
 
@@ -69,7 +70,7 @@ class DirectScheduler {
   }
 
   private onRegister(
-    rpc: ComcatRPC<ComcatCommands, any>,
+    rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>,
     msg: ComcatCommands,
     reply: (payload: any) => void
   ) {
@@ -87,7 +88,7 @@ class DirectScheduler {
   }
 
   private registerPipe(
-    rpc: ComcatRPC<ComcatCommands, any>,
+    rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>,
     command: ComcatCommandPipeRegister
   ) {
     const { id, topic } = command.params;
