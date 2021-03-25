@@ -83,8 +83,9 @@ NO.
 
 - [x] ~~Move topic filtering of pipe to the worker;~~
 - [x] ~~Only output debug info if enabled~~;
+- [x] ~~Using simplified raft-like consensus algorithm to ensure single connection~~
+- [ ] Object URL makes it impossible to link to the same inline SharedWorker
 - [ ] 通过全局变量确保用户无法创建多个相同`category`的`pump`
-- [ ] 通过心跳检测`pump`所处页面是否已关闭，防止`pump`意外终止没有正确注销的情况
 
 ## Lisence
 

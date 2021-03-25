@@ -1,9 +1,17 @@
+import {
+  RaftDealer,
+  RaftResponseElect,
+  RaftResponseHeartbeat,
+  RaftResponseMessaging,
+} from '../client/raft';
 import { ComcatRPC } from '../client/rpc';
 import {
   ComcatBroadcastMessage,
   ComcatCommandPumpClose,
   ComcatCommandPumpEmit,
-  ComcatCommandPumpOpen,
+  ComcatCommandPumpRaftElect,
+  ComcatCommandPumpRaftHeartbeat,
+  ComcatCommandPumpRaftMessaging,
   ComcatCommandPumpRegister,
   ComcatCommandReplies,
   ComcatCommands,
@@ -20,8 +28,8 @@ interface ComcatPumpRegistry {
 export class ComcatPumpScheduler {
   public onBroadcast: (message: ComcatBroadcastMessage) => void = () => {};
 
-  private activeUniquePumpIds: { [category: string]: string | undefined } = {};
-  private pumps: ComcatPumpRegistry[] = [];
+  private pumps: Map<string /** id */, ComcatPumpRegistry> = new Map();
+  private raftDealers: Map<string /** category */, RaftDealer> = new Map();
 
   public register(
     rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>,
@@ -29,7 +37,7 @@ export class ComcatPumpScheduler {
   ): boolean {
     const { id, category, mode } = cmd.params;
 
-    const pump = this.pumps.find((p) => p.id === id);
+    const pump = this.pumps.get(id);
     if (pump) {
       return false;
     }
@@ -40,16 +48,33 @@ export class ComcatPumpScheduler {
       mode,
       rpc,
     };
-    this.pumps.push(registry);
+    this.pumps.set(id, registry);
 
     rpc.onRemoteCall = this.onCall.bind(this);
     return true;
   }
 
+  private getDealer(category: string): RaftDealer {
+    let dealer = this.raftDealers.get(category);
+    if (dealer) {
+      return dealer;
+    }
+
+    dealer = new RaftDealer();
+    this.raftDealers.set(category, dealer);
+    return dealer;
+  }
+
   private onCall(msg: ComcatCommands, reply: (payload: any) => void) {
     switch (msg.name) {
-      case 'pump_open':
-        return reply(this.onOpen(msg));
+      case 'pump_raft_elect':
+        return this.onRaftElect(msg, reply);
+
+      case 'pump_raft_heartbeat':
+        return this.onRaftHeartbeat(msg, reply);
+
+      case 'pump_raft_messaging':
+        return this.onraftMessaging(msg, reply);
 
       case 'pump_close':
         return this.onClose(msg);
@@ -63,16 +88,10 @@ export class ComcatPumpScheduler {
   }
 
   private onClose(cmd: ComcatCommandPumpClose) {
-    const { id, category } = cmd.params;
+    const { category, id } = cmd.params;
 
-    const index = this.pumps.findIndex((p) => p.id === id);
-    if (index !== -1) {
-      this.pumps.splice(index, 1);
-    }
-
-    const activePump = this.activeUniquePumpIds[category];
-    if (activePump === id) {
-      this.pickNextActivePump(category);
+    if (this.pumps.has(id)) {
+      this.pumps.delete(id);
     }
   }
 
@@ -80,42 +99,33 @@ export class ComcatPumpScheduler {
     this.onBroadcast(cmd.params);
   }
 
-  private onOpen(cmd: ComcatCommandPumpOpen): boolean {
-    const { id, category, mode } = cmd.params;
+  private onRaftElect(
+    cmd: ComcatCommandPumpRaftElect,
+    reply: (payload: RaftResponseElect) => void
+  ) {
+    const { category, raft } = cmd.params;
 
-    if (mode === 'standalone') {
-      return true;
-    }
-
-    const activePump = this.activeUniquePumpIds[category];
-    if (activePump !== void 0) {
-      return false;
-    }
-
-    this.activeUniquePumpIds[category] = id;
-    return true;
+    const dealer = this.getDealer(category);
+    dealer.RequestElect(raft, reply);
   }
 
-  private async pickNextActivePump(category: string) {
-    const candidate = this.pumps.filter(
-      (p) => p.category === category && p.mode === 'unique'
-    )[0];
+  private onRaftHeartbeat(
+    cmd: ComcatCommandPumpRaftHeartbeat,
+    reply: (payload: RaftResponseHeartbeat) => void
+  ) {
+    const { category, raft } = cmd.params;
 
-    if (!candidate) {
-      this.activeUniquePumpIds[category] = void 0;
-      return;
-    }
+    const dealer = this.getDealer(category);
+    dealer.RequestHeartbeat(raft, reply);
+  }
 
-    const { id, mode, rpc } = candidate;
-    rpc.call({
-      name: 'pump_open',
-      params: {
-        id,
-        mode,
-        category,
-      },
-    });
+  private onraftMessaging(
+    cmd: ComcatCommandPumpRaftMessaging,
+    reply: (payload: RaftResponseMessaging) => void
+  ) {
+    const { category, raft } = cmd.params;
 
-    this.activeUniquePumpIds[category] = id;
+    const dealer = this.getDealer(category);
+    dealer.RequestMessaging(raft, reply);
   }
 }

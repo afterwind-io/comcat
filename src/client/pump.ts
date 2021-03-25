@@ -3,6 +3,15 @@ import { ComcatRPC } from './rpc';
 import { getTransport } from './transport';
 import { Debug } from './debug';
 import { getUniqueId } from './util';
+import {
+  RaftActor,
+  RaftRequestElect,
+  RaftRequestHeartbeat,
+  RaftRequestMessaging,
+  RaftResponseElect,
+  RaftResponseHeartbeat,
+  RaftResponseMessaging,
+} from './raft';
 
 const debug = new Debug('comcat-pump');
 
@@ -16,7 +25,8 @@ export abstract class ComcatPump {
   private readonly id: string;
   private readonly mode: ComcatPumpMode;
   private readonly rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
-  private status: 'idle' | 'pending' | 'working' = 'idle';
+  private readonly raft: RaftActor;
+  private status: 'idle' | 'sleep' | 'working' = 'idle';
 
   public constructor(options: ComcatPumpOptions) {
     const { category, mode } = options;
@@ -25,20 +35,26 @@ export abstract class ComcatPump {
     this.mode = mode;
 
     this.rpc = new ComcatRPC(getTransport());
-    this.rpc.onRemoteCall = this.onCall.bind(this);
+
+    this.raft = new RaftActor();
+    this.raft.onBecomeLeader = this.onRaftBecomeLeader;
+    this.raft.onBecomeCandidate = this.onRaftBecomeCandidate;
+    this.raft.onElect = this.onRaftElect;
+    this.raft.onHeartbeat = this.onRaftHeartbeat;
+    this.raft.onMessaging = this.onRaftMessaging;
 
     this.id = getUniqueId();
 
-    window.addEventListener('unload', this.onDispose.bind(this));
+    window.addEventListener('unload', this.onDispose);
   }
 
   public async start(): Promise<boolean> {
-    if (this.status === 'working') {
+    if (this.status !== 'idle') {
       return false;
     }
 
     try {
-      await this.rpc.call({
+      const isRegistryValid = await this.rpc.call({
         name: 'pump_register',
         params: {
           id: this.id,
@@ -46,21 +62,11 @@ export abstract class ComcatPump {
           category: this.category,
         },
       });
-
-      const isGranted = await this.rpc.call({
-        name: 'pump_open',
-        params: {
-          id: this.id,
-          mode: this.mode,
-          category: this.category,
-        },
-      });
-      if (!isGranted) {
-        this.status = 'pending';
+      if (!isRegistryValid) {
         return false;
       }
 
-      this.onOpen();
+      this.raft.start();
 
       return true;
     } catch (error) {
@@ -70,15 +76,16 @@ export abstract class ComcatPump {
     }
   }
 
-  public stop() {
-    this.disconnect();
-  }
-
   protected abstract connect(): void;
   protected abstract disconnect(): void;
   protected abstract dispose(): void;
 
-  protected pump(topic: string, data: any): Promise<never> {
+  protected async pump(topic: string, data: any): Promise<void> {
+    const isGranted = await this.raft.RequestMessaging();
+    if (!isGranted) {
+      return;
+    }
+
     return this.rpc.call({
       name: 'pump_emit',
       oneshot: true,
@@ -86,27 +93,7 @@ export abstract class ComcatPump {
     });
   }
 
-  private onCall(cmd: ComcatCommands, reply: (payload: any) => void) {
-    switch (cmd.name) {
-      case 'pump_open':
-        // FIXME 万一连接失败？
-        this.onOpen();
-        reply(true);
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  private onOpen() {
-    this.connect();
-    this.status = 'working';
-
-    debug.log(`pump "${this.category}" activated.`);
-  }
-
-  private onDispose() {
+  private onDispose = () => {
     this.disconnect();
     this.dispose();
 
@@ -116,5 +103,45 @@ export abstract class ComcatPump {
       params: { id: this.id, category: this.category },
     });
     this.rpc.close();
-  }
+  };
+
+  private onRaftBecomeLeader = () => {
+    // FIXME connect过程有可能是异步的
+    this.connect();
+    this.status = 'working';
+
+    debug.log(`pump "${this.category}-${this.id}" activated.`);
+  };
+
+  private onRaftBecomeCandidate = () => {
+    this.disconnect();
+    this.status = 'sleep';
+
+    debug.log(`pump "${this.category}-${this.id}" inactivated.`);
+  };
+
+  private onRaftElect = (req: RaftRequestElect): Promise<RaftResponseElect> => {
+    return this.rpc.call({
+      name: 'pump_raft_elect',
+      params: { category: this.category, raft: req },
+    });
+  };
+
+  private onRaftHeartbeat = (
+    req: RaftRequestHeartbeat
+  ): Promise<RaftResponseHeartbeat> => {
+    return this.rpc.call({
+      name: 'pump_raft_heartbeat',
+      params: { category: this.category, raft: req },
+    });
+  };
+
+  private onRaftMessaging = (
+    req: RaftRequestMessaging
+  ): Promise<RaftResponseMessaging> => {
+    return this.rpc.call({
+      name: 'pump_raft_messaging',
+      params: { category: this.category, raft: req },
+    });
+  };
 }

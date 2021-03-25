@@ -11,6 +11,8 @@ import {
 import { Debug } from '../debug';
 import { ComcatRPC } from '../rpc';
 
+// FIXME direct需要重新实现
+
 const debug = new Debug('comcat-transport-direct');
 
 interface ComcatPipeRegistry {
@@ -34,9 +36,9 @@ class DirectScheduler {
 
   public postMessage(msg: ComcatCommands, reply: (payload: any) => void) {
     switch (msg.name) {
-      case 'pump_open':
-        // We don't keep track of pumps so whatever.
-        return reply(true);
+      // case 'pump_open':
+      //   // We don't keep track of pumps so whatever.
+      //   return reply(true);
       case 'pump_emit':
         return this.broadcast(msg);
       case 'pump_close':

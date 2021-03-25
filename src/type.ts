@@ -1,3 +1,12 @@
+import {
+  RaftRequestElect,
+  RaftRequestHeartbeat,
+  RaftRequestMessaging,
+  RaftResponseElect,
+  RaftResponseHeartbeat,
+  RaftResponseMessaging,
+} from './client/raft';
+
 export interface ComcatTransport {
   connect(): void;
   disconnect(): void;
@@ -24,13 +33,6 @@ export interface ComcatBroadcastMessage {
   data: any;
 }
 
-export interface ComcatCommandPing {
-  name: 'ping';
-}
-export type ComcatCommandReplyPing = {
-  ping: boolean;
-};
-
 export interface ComcatCommandPumpRegister {
   name: 'pump_register';
   params: {
@@ -41,18 +43,6 @@ export interface ComcatCommandPumpRegister {
 }
 export type ComcatCommandReplyPumpRegister = {
   pump_register: boolean;
-};
-
-export interface ComcatCommandPumpOpen {
-  name: 'pump_open';
-  params: {
-    id: string;
-    mode: ComcatPumpMode;
-    category: string;
-  };
-}
-export type ComcatCommandReplyPumpOpen = {
-  pump_open: boolean;
 };
 
 export interface ComcatCommandPumpClose {
@@ -74,6 +64,39 @@ export interface ComcatCommandPumpEmit {
 }
 export type ComcatCommandReplyPumpEmit = {
   pump_emit: never;
+};
+
+export interface ComcatCommandPumpRaftElect {
+  name: 'pump_raft_elect';
+  params: {
+    category: string;
+    raft: RaftRequestElect;
+  };
+}
+export type ComcatCommandReplyPumpRaftElect = {
+  pump_raft_elect: RaftResponseElect;
+};
+
+export interface ComcatCommandPumpRaftHeartbeat {
+  name: 'pump_raft_heartbeat';
+  params: {
+    category: string;
+    raft: RaftRequestHeartbeat;
+  };
+}
+export type ComcatCommandReplyPumpRaftHeartbeat = {
+  pump_raft_heartbeat: RaftResponseHeartbeat;
+};
+
+export interface ComcatCommandPumpRaftMessaging {
+  name: 'pump_raft_messaging';
+  params: {
+    category: string;
+    raft: RaftRequestMessaging;
+  };
+}
+export type ComcatCommandReplyPumpRaftMessaging = {
+  pump_raft_messaging: RaftResponseMessaging;
 };
 
 export interface ComcatCommandPipeRegister {
@@ -108,20 +131,22 @@ export type ComcatCommandReplyPipeClose = {
 };
 
 export type ComcatCommands =
-  | ComcatCommandPing
   | ComcatCommandPumpRegister
-  | ComcatCommandPumpOpen
   | ComcatCommandPumpClose
   | ComcatCommandPumpEmit
+  | ComcatCommandPumpRaftElect
+  | ComcatCommandPumpRaftHeartbeat
+  | ComcatCommandPumpRaftMessaging
   | ComcatCommandPipeRegister
   | ComcatCommandPipeReceive
   | ComcatCommandPipeClose;
 
-export type ComcatCommandReplies = ComcatCommandReplyPing &
-  ComcatCommandReplyPumpRegister &
-  ComcatCommandReplyPumpOpen &
+export type ComcatCommandReplies = ComcatCommandReplyPumpRegister &
   ComcatCommandReplyPumpClose &
   ComcatCommandReplyPumpEmit &
+  ComcatCommandReplyPumpRaftElect &
+  ComcatCommandReplyPumpRaftHeartbeat &
+  ComcatCommandReplyPumpRaftMessaging &
   ComcatCommandReplyPipeRegister &
   ComcatCommandReplyPipeReceive &
   ComcatCommandReplyPipeClose;
