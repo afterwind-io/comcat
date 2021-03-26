@@ -1,4 +1,4 @@
-import Worker from 'web-worker:../../worker/index';
+import InlineWorker from 'web-worker:../../worker/index';
 import { ComcatTransport, ComcatRPCProtocal } from '../../type';
 import { Debug } from '../debug';
 
@@ -10,7 +10,7 @@ export class ComcatTransportSharedWorker implements ComcatTransport {
   private readonly worker: SharedWorker;
 
   public constructor() {
-    this.worker = new Worker();
+    this.worker = new InlineWorker();
     this.worker.port.onmessage = this.onPortMessage.bind(this);
   }
 

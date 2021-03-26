@@ -1,0 +1,3 @@
+[submodule "third-party/worker-loader"]
+	path = third-party/worker-loader
+	url = https://github.com/afterwind-io/rollup-plugin-web-worker-loader.git
