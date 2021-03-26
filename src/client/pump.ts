@@ -81,6 +81,10 @@ export abstract class ComcatPump {
   protected abstract dispose(): void;
 
   protected async pump(topic: string, data: any): Promise<void> {
+    if (!this.raft.IsLeader) {
+      return;
+    }
+
     const isGranted = await this.raft.RequestMessaging();
     if (!isGranted) {
       return;

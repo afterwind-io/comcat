@@ -52,37 +52,30 @@ export class RaftActor {
   }
 
   private elect = async () => {
-    const localTerm = ++this.term;
-
     const { isGranted, term } = await this.onElect({
-      term: localTerm,
+      term: this.term + 1,
     });
 
     if (isGranted) {
       this.status = 'leader';
-
       this.onBecomeLeader();
-    } else {
-      this.term = term;
     }
 
+    this.term = term;
     this.loop();
   };
 
   private heartbeat = async () => {
-    const localTerm = ++this.term;
-
     const { isExpired, term } = await this.onHeartbeat({
-      term: localTerm,
+      term: this.term + 1,
     });
 
     if (isExpired) {
       this.status = 'candidate';
-      this.term = term;
-
       this.onBecomeCandidate();
     }
 
+    this.term = term;
     this.loop();
   };
 
