@@ -9,9 +9,12 @@ import {
   ComcatTransport,
 } from '../../type';
 import { Debug } from '../debug';
+import {
+  RaftResponseElect,
+  RaftResponseHeartbeat,
+  RaftResponseMessaging,
+} from '../raft';
 import { ComcatRPC } from '../rpc';
-
-// FIXME direct需要重新实现
 
 const debug = new Debug('comcat-transport-direct');
 
@@ -36,16 +39,38 @@ class DirectScheduler {
 
   public postMessage(msg: ComcatCommands, reply: (payload: any) => void) {
     switch (msg.name) {
-      // case 'pump_open':
-      //   // We don't keep track of pumps so whatever.
-      //   return reply(true);
+      /**
+       * In `direct` mode, since all transport happens within the context of
+       * same tab, there is no need to elect a leader and so forth. So we just
+       * accept all requests.
+       */
+      case 'pump_raft_elect':
+        const resElect: RaftResponseElect = {
+          isGranted: true,
+          term: 0,
+        };
+        return reply(resElect);
+      case 'pump_raft_heartbeat':
+        const resHeartbeat: RaftResponseHeartbeat = {
+          isExpired: false,
+          term: 0,
+        };
+        return reply(resHeartbeat);
+      case 'pump_raft_messaging':
+        const resMessaging: RaftResponseMessaging = {
+          isGranted: true,
+        };
+        return reply(resMessaging);
+
+      // We don't keep track of pumps so just drop it.
+      case 'pump_close':
+        break;
       case 'pump_emit':
         return this.broadcast(msg);
-      case 'pump_close':
-        // We don't keep track of pumps so just drop it.
-        break;
+
       case 'pipe_close':
         return this.unregisterPipe(msg);
+
       default:
         break;
     }
@@ -81,9 +106,11 @@ class DirectScheduler {
         // We don't keep track of pumps so it should be always success.
         rpc.onRemoteCall = this.postMessage;
         return reply(true);
+
       case 'pipe_register':
         rpc.onRemoteCall = this.postMessage;
         return this.registerPipe(rpc, msg);
+
       default:
         break;
     }
