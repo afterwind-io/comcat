@@ -9,7 +9,6 @@ export declare abstract class ComcatPipe {
   private status;
   constructor(options: ComcatPipeOptions);
   start(): Promise<boolean>;
-  protected abstract dispose(): void;
   protected abstract onMessage(topic: string, data: unknown): void;
   private onCall;
   private onDispose;
@@ -34,7 +33,6 @@ export declare abstract class ComcatPump {
   stop(): void;
   protected abstract connect(): void;
   protected abstract disconnect(): void;
-  protected abstract dispose(): void;
   protected pump(topic: string, data: any): Promise<never>;
   private onCall;
   private onOpen;

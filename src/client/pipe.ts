@@ -53,7 +53,6 @@ export abstract class ComcatPipe {
     }
   }
 
-  protected abstract dispose(): void;
   protected abstract onMessage(topic: string, data: unknown): void;
 
   private onCall(cmd: ComcatCommands, reply: (payload: unknown) => void) {
@@ -67,8 +66,6 @@ export abstract class ComcatPipe {
   }
 
   private onDispose() {
-    this.dispose();
-
     this.rpc.call({
       name: 'pipe_close',
       oneshot: true,

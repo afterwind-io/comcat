@@ -6,7 +6,7 @@ Comcat.enableDebug(true);
 // Comcat.setMode("direct");
 
 class MockPollingPump extends ComcatPump {
-  interval = 1000;
+  interval = 10000;
   intervalHandler = -1;
 
   connect() {
@@ -19,17 +19,9 @@ class MockPollingPump extends ComcatPump {
   disconnect() {
     clearInterval(this.intervalHandler);
   }
-
-  dispose() {
-    // Nothing.
-  }
 }
 
 class MockPipe extends ComcatPipe {
-  dispose() {
-    // Nothing.
-  }
-
   onMessage(topic, data) {
     if (window.document.visibilityState === 'hidden') {
       return;

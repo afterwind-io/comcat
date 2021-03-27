@@ -78,7 +78,6 @@ export abstract class ComcatPump {
 
   protected abstract connect(): void;
   protected abstract disconnect(): void;
-  protected abstract dispose(): void;
 
   protected async pump(topic: string, data: any): Promise<void> {
     if (!this.raft.IsLeader) {
@@ -99,7 +98,6 @@ export abstract class ComcatPump {
 
   private onDispose = () => {
     this.disconnect();
-    this.dispose();
 
     this.rpc.call({
       name: 'pump_close',
