@@ -23,7 +23,7 @@ This library is currently aimed to solve a common problem:
 - Broadcast messages to all tabs;
 - Keep **one and only one** connection alive across tabs;
 
-With the unique characteristics of [`SharedWorker`][mdn-sharedworker], `Comcat` can automatically reconnect if the tab owns the connecton is closed or even crashed. If you are keen on how it is accomplished, please refer to [How it works](#how-it-works).
+With the unique characteristics of [`SharedWorker`][mdn-sharedworker], `Comcat` can automatically reconnect if the tab owns the connection is closed or even crashed. If you are keen on how it is accomplished, please refer to [How it works](#how-it-works).
 
 ## Get Started
 
@@ -146,7 +146,35 @@ Be careful, this may output enormous content. However, the logs from the worker 
 
 ## How it works
 
+### Why `SharedWorker`
+
+First let's revisit the two main goals we ought to achieve:
+
+> - Broadcast messages to all tabs;
+> - Keep **one and only one** connection alive across tabs;
+
+Broadcasting alone is a relatively simple task. To send messages between tabs, a bunch of techniques can be taken:
+
+- [window.postMessage()][mdn-postmessage]
+- [Storage Event][mdn-storageevent]
+- [Broadcast Channel API][mdn-broadcast]
+
+So the true challenge here is the second part. Ideally we need to implement a certain kind of scheduler that:
+
+- Stay alive as long as at least one tab is running (same origin);
+- Can be accessed from all opened tabs with same origin;
+- Decide which tab has the right to connect and push messages;
+- Recover from the situation where the tab currently owns the connection is closed/freezed;
+
+The mechanism of `SharedWorker` fits the first two requirements perfectly. It is running on a separate thread. All tabs with the same origin can access the worker. And the best part is, it will keep alive even if the original spawner of the worker is crashed, as long as at least one tab with the same origin is running.
+
+Furthermore, `SharedWorker` provides bi-directional, message-based communication to send data between main thread and the worker. We can easily turn it into a mediate proxy and broadcast the message from one tab to other tabs.
+
+In conclusion, `SharedWorker` is the best option makes maintaining and rerouting the connection possible.
+
 ### Raft Consensus Algorithm - The Simplified Version
+
+Now we have a reliable foundation for scheduler, the remaining problem is how to ???. ???, 
 
 TODO
 
@@ -221,7 +249,10 @@ NO.
 [download-badge]: https://img.shields.io/npm/dt/comcat.svg
 [license]: LICENSE
 [license-badge]: https://img.shields.io/npm/l/comcat.svg
-[mdn-sharedworker]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers#shared_workers
-[mdn-objecturl]: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL#memory_management
 [caniuse-sharedworker]: https://caniuse.com/mdn-api_sharedworker
 [spec-sharedworker]: https://html.spec.whatwg.org/multipage/workers.html#shared-workers-and-the-sharedworker-interface
+[mdn-sharedworker]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers#shared_workers
+[mdn-objecturl]: https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL#memory_management
+[mdn-postmessage]: https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
+[mdn-storageevent]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API#responding_to_storage_changes_with_the_storageevent
+[mdn-broadcast]: https://developer.mozilla.org/en-US/docs/Web/API/Broadcast_Channel_API
