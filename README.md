@@ -153,7 +153,7 @@ First let's revisit the two main goals we ought to achieve:
 > - Broadcast messages to all tabs;
 > - Keep **one and only one** connection alive across tabs;
 
-Broadcasting alone is a relatively simple task. To send messages between tabs, a bunch of techniques can be taken:
+Broadcasting alone is a relatively simple task. To send messages between tabs, a bunch of techniques can be adopted:
 
 - [window.postMessage()][mdn-postmessage]
 - [Storage Event][mdn-storageevent]
@@ -172,9 +172,175 @@ Furthermore, `SharedWorker` provides bi-directional, message-based communication
 
 In conclusion, `SharedWorker` is the best option makes maintaining and rerouting the connection possible.
 
-### Raft Consensus Algorithm - The Simplified Version
+### The Consensus Problem
 
-Now we have a reliable foundation for scheduler, the remaining problem is how to ???. ???, 
+Consider it roughly, the situation we are facing is quite similar to distributed systems. For example, when managing a replicated log, the system is always trying to:
+
+- Ensure a unique leader to accept log entries from clients;
+- Re-elect if the leader is crashed;
+
+The magic working behind the scene is known as "Consensus Algorithm". With the concept of such algorithm, we can convert our problem to:
+
+- Ensure a unique leader(tab) to connect to a backend and broadcast messages;
+- Re-elect if the leader(tab) is closed/freezed;
+
+Among the various algorithms, [Raft][raft] is relatively easy to understand and implement. However, it is designed for the purpose like building distributed log system, so it is still a little complicated against our needs. After all, we don't aim for strict safety. Besides, browser tabs are more likely to be opened and closed frequently, which is quite opposite to a stable cluster.
+
+Eventually, a tailored version of Raft is applied. The distributed part of the algorithm is ditched, since a scheduler working on `SharedWorker` plays the role as a centralized coordinator, which can chop down all consensus procedure between tabs. The concept of `term` is kept to detect stale leader or reject its message requests, thus help quickly recovering from abnormal situations.
+
+#### Overview
+
+##### Actor
+
+`Actor` is the counterpart of `Server` in the original Raft algorithm. It is either in one of the following state:
+
+`Leader`
+
+- Has full permission to broadcast message;
+- Maintains heartbeat every 3 seconds to prevent election timeouts. If failed, convert to `Candidate`;
+
+`Candidate`
+
+- Initiate an election every 5 seconds; If succeed, convert to `Leader`;
+
+##### Dealer
+
+`Dealer`, aka the scheduler, is responsible for:
+
+- Check if the election from `Candidate` is valid;
+- Check if the heartbeat from `Leader` is valid;
+- Check if `Actor` has the permission to broadcast messages;
+
+...according to the certain rules. Details see below.
+
+#### RPC
+
+The communication between `Actor` and `Dealer` is proceeded using remote procedure call(RPC), built on top of `SharedWorker` messaging mechanism. There are three types of RPCs.
+
+##### Election RPC
+
+Invoked by `Candidate` to attempt to become leader.
+
+```typescript
+interface RaftRequestElect {
+  // Actor's term
+  term: number;
+}
+interface RaftResponseElect {
+  // true if election succeed
+  isGranted: boolean;
+  // Dealer's term
+  term: number;
+}
+```
+
+##### Heartbeat RPC
+
+Invoked by `Leader` to maintain its authority.
+
+```typescript
+interface RaftRequestHeartbeat {
+  // Actor's term
+  term: number;
+}
+interface RaftResponseHeartbeat {
+  // true if there's another valid leader
+  isExpired: boolean;
+  // Dealer's term
+  term: number;
+}
+```
+
+##### Message Request RPC
+
+Invoked by `Leader` to check permission for broadcasting; Also act as a heartbeat.
+
+```typescript
+interface RaftRequestMessaging<T> {
+  // Actor's term
+  term: number;
+  // The message to be sent
+  message: T;
+}
+interface RaftResponseMessaging {
+  // true if there's another valid leader
+  isExpired: boolean;
+  // Dealer's term
+  term: number;
+}
+```
+
+#### The Algorithm
+
+##### Election
+
+The election is initiated by `Candidate` and issued every 5 seconds.
+
+When the election stage starts:
+
+- [`Actor`] Increase the local `term` by 1, and send it along `Election RPC` to `Dealer`
+- [`Dealer`] Check the incoming term(`a`) against local term(`b`):
+  - If `a > b`, election succeed
+      - Override the local term with the incoming term
+      - Accept and reply with incoming term
+  - Else, election failed
+      - Reject and reply with the local term
+- [`Actor`] Check the reply:
+  - If the election is granted, 
+    - Convert to `Leader`
+    - Start heartbeat loop
+  - Else,
+    - Override the local term with the incoming term
+    - Start election loop
+
+##### Heartbeat
+
+The heartbeat is initiated by `Leader` and issued every 3 seconds.
+
+When the heartbeat stage starts:
+
+- [`Actor`] Increase the local `term` by 1, and send it along `Heartbeat RPC` to `Dealer`
+- [`Dealer`] Check the incoming term(`a`) against local term(`b`):
+  - If `a > b`, heartbeat check succeed
+      - Override the local term with the incoming term
+      - Accept and reply with incoming term
+  - Else, heartbeat check failed
+      - Reject and reply with the local term
+- [`Actor`] Check the reply:
+  - If the heartbeat is expired,
+    - Override the local term with the incoming term
+    - Convert to `Candidate`
+    - Start election loop
+  - Else,
+    - Restart heartbeat loop
+
+##### Message Request
+
+The message request is initiated by `Leader` and manually generated from user land. Since sending message is also a proof of activity, the rules for message request is the same as heartbeat.
+
+When the message request stage starts:
+
+- [`Actor`] Increase the local `term` by 1, and send it along `Message Request RPC` to `Dealer`
+- [`Dealer`] Check the incoming term(`a`) against local term(`b`):
+  - If `a > b`, request check succeed
+      - Send the message
+      - Override the local term with the incoming term
+      - Accept and reply with incoming term
+  - Else, request check failed
+      - Reject and reply with the local term
+- [`Actor`] Check the reply:
+  - If the request is rejected,
+    - Override the local term with the incoming term
+    - Convert to `Candidate`
+    - Start election loop
+  - Else,
+    - Restart heartbeat loop
+
+#### Caveats
+
+There are some certain situations where:
+
+- A stale `Leader` is waiting for the response of heartbeat, but meanwhile one or more message requests are issued;
 
 TODO
 
@@ -182,7 +348,7 @@ TODO
 
 Obviously, it is awkward for user to manually copy the distributed worker file to somewhere like `public` folder, then provide the instantiated worker as part of startup procedure. Thus, the inlined worker is a much better solution.
 
-If you search for how to embed workers, such as MDN, it tells you something like this:
+If you searched for how to embed workers, such as MDN, it tells you something like this:
 
 ```javascript
 var blob = new Blob('Worker code goes here');
@@ -215,7 +381,7 @@ This technique meets all the desired needs:
 - Easily generated and embedded;
 - The result URL is always the same as long as the worker code maintains unchanged;
 
-Now each tabs can point to the same worker. Problem solved.
+Now each tab can point to the same worker. Problem solved.
 
 ## Browser Compatibility
 
@@ -256,3 +422,4 @@ NO.
 [mdn-postmessage]: https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
 [mdn-storageevent]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API#responding_to_storage_changes_with_the_storageevent
 [mdn-broadcast]: https://developer.mozilla.org/en-US/docs/Web/API/Broadcast_Channel_API
+[raft]: https://raft.github.io/
