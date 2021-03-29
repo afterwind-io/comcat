@@ -15,14 +15,16 @@ export interface RaftResponseHeartbeat {
   isExpired: boolean;
   term: number;
 }
-export interface RaftRequestMessaging {
+export interface RaftRequestMessaging<T> {
   term: number;
+  message: T;
 }
 export interface RaftResponseMessaging {
-  isGranted: boolean;
+  term: number;
+  isExpired: boolean;
 }
 
-export class RaftActor {
+export class RaftActor<T> {
   public onBecomeLeader!: () => void;
   public onBecomeCandidate!: () => void;
   public onElect!: (req: RaftRequestElect) => Promise<RaftResponseElect>;
@@ -30,7 +32,7 @@ export class RaftActor {
     req: RaftRequestHeartbeat
   ) => Promise<RaftResponseHeartbeat>;
   public onMessaging!: (
-    req: RaftRequestMessaging
+    req: RaftRequestMessaging<T>
   ) => Promise<RaftResponseMessaging>;
 
   private term: number = 0;
@@ -46,14 +48,24 @@ export class RaftActor {
     this.elect();
   }
 
-  public async RequestMessaging(): Promise<boolean> {
-    const { isGranted } = await this.onMessaging({ term: this.term });
-    return isGranted;
+  public async RequestMessaging(message: T) {
+    const { isExpired, term } = await this.onMessaging({
+      term: ++this.term,
+      message,
+    });
+
+    if (isExpired) {
+      this.status = 'candidate';
+      this.onBecomeCandidate();
+    }
+
+    this.term = term;
+    this.loop();
   }
 
   private elect = async () => {
     const { isGranted, term } = await this.onElect({
-      term: this.term + 1,
+      term: ++this.term,
     });
 
     if (isGranted) {
@@ -67,7 +79,7 @@ export class RaftActor {
 
   private heartbeat = async () => {
     const { isExpired, term } = await this.onHeartbeat({
-      term: this.term + 1,
+      term: ++this.term,
     });
 
     if (isExpired) {
@@ -96,7 +108,9 @@ export class RaftActor {
   }
 }
 
-export class RaftDealer {
+export class RaftDealer<T> {
+  public onMessageRequest!: (message: T) => void;
+
   private term: number = 0;
 
   public RequestElect(
@@ -126,10 +140,17 @@ export class RaftDealer {
   }
 
   public async RequestMessaging(
-    req: RaftRequestMessaging,
+    req: RaftRequestMessaging<T>,
     reply: (res: RaftResponseMessaging) => void
   ) {
-    const { term } = req;
-    reply({ isGranted: term >= this.term });
+    const { term, message } = req;
+    if (term > this.term) {
+      this.term = term;
+      this.onMessageRequest(message);
+
+      reply({ isExpired: false, term });
+    } else {
+      reply({ isExpired: true, term: this.term });
+    }
   }
 }

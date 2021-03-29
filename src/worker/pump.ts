@@ -8,7 +8,6 @@ import { ComcatRPC } from '../client/rpc';
 import {
   ComcatBroadcastMessage,
   ComcatCommandPumpClose,
-  ComcatCommandPumpEmit,
   ComcatCommandPumpRaftElect,
   ComcatCommandPumpRaftHeartbeat,
   ComcatCommandPumpRaftMessaging,
@@ -28,8 +27,14 @@ interface ComcatPumpRegistry {
 export class ComcatPumpScheduler {
   public onBroadcast: (message: ComcatBroadcastMessage) => void = () => {};
 
-  private pumps: Map<string /** id */, ComcatPumpRegistry> = new Map();
-  private raftDealers: Map<string /** category */, RaftDealer> = new Map();
+  private pumps: Map<
+    string, // id
+    ComcatPumpRegistry
+  > = new Map();
+  private raftDealers: Map<
+    string, // category
+    RaftDealer<ComcatBroadcastMessage>
+  > = new Map();
 
   public register(
     rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>,
@@ -54,14 +59,16 @@ export class ComcatPumpScheduler {
     return true;
   }
 
-  private getDealer(category: string): RaftDealer {
+  private getDealer(category: string): RaftDealer<ComcatBroadcastMessage> {
     let dealer = this.raftDealers.get(category);
     if (dealer) {
       return dealer;
     }
 
     dealer = new RaftDealer();
+    dealer.onMessageRequest = this.onBroadcast;
     this.raftDealers.set(category, dealer);
+
     return dealer;
   }
 
@@ -74,13 +81,10 @@ export class ComcatPumpScheduler {
         return this.onRaftHeartbeat(msg, reply);
 
       case 'pump_raft_messaging':
-        return this.onraftMessaging(msg, reply);
+        return this.onRaftMessaging(msg, reply);
 
       case 'pump_close':
         return this.onClose(msg);
-
-      case 'pump_emit':
-        return this.onEmit(msg);
 
       default:
         break;
@@ -93,10 +97,6 @@ export class ComcatPumpScheduler {
     if (this.pumps.has(id)) {
       this.pumps.delete(id);
     }
-  }
-
-  private onEmit(cmd: ComcatCommandPumpEmit) {
-    this.onBroadcast(cmd.params);
   }
 
   private onRaftElect(
@@ -119,7 +119,7 @@ export class ComcatPumpScheduler {
     dealer.RequestHeartbeat(raft, reply);
   }
 
-  private onraftMessaging(
+  private onRaftMessaging(
     cmd: ComcatCommandPumpRaftMessaging,
     reply: (payload: RaftResponseMessaging) => void
   ) {

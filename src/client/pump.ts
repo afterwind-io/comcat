@@ -1,4 +1,9 @@
-import { ComcatCommands, ComcatCommandReplies, ComcatPumpMode } from '../type';
+import {
+  ComcatCommands,
+  ComcatCommandReplies,
+  ComcatPumpMode,
+  ComcatBroadcastMessage,
+} from '../type';
 import { ComcatRPC } from './rpc';
 import { getTransport } from './transport';
 import { Debug } from './debug';
@@ -25,7 +30,7 @@ export abstract class ComcatPump {
   private readonly id: string;
   private readonly mode: ComcatPumpMode;
   private readonly rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
-  private readonly raft: RaftActor;
+  private readonly raft: RaftActor<ComcatBroadcastMessage>;
   private status: 'idle' | 'sleep' | 'working' = 'idle';
 
   public constructor(options: ComcatPumpOptions) {
@@ -84,16 +89,7 @@ export abstract class ComcatPump {
       return;
     }
 
-    const isGranted = await this.raft.RequestMessaging();
-    if (!isGranted) {
-      return;
-    }
-
-    return this.rpc.call({
-      name: 'pump_emit',
-      oneshot: true,
-      params: { topic, data },
-    });
+    return this.raft.RequestMessaging({ topic, data });
   }
 
   private onDispose = () => {
@@ -139,7 +135,7 @@ export abstract class ComcatPump {
   };
 
   private onRaftMessaging = (
-    req: RaftRequestMessaging
+    req: RaftRequestMessaging<ComcatBroadcastMessage>
   ): Promise<RaftResponseMessaging> => {
     return this.rpc.call({
       name: 'pump_raft_messaging',

@@ -57,11 +57,24 @@ export type ComcatCommandReplyPumpClose = {
   pump_close: never;
 };
 
+/**
+ * Command for broadcasting message
+ *
+ * @deprecated
+ * @export
+ * @interface ComcatCommandPumpEmit
+ */
 export interface ComcatCommandPumpEmit {
   name: 'pump_emit';
   oneshot: true;
   params: ComcatBroadcastMessage;
 }
+/**
+ * The response for `ComcatCommandPumpEmit`
+ *
+ * @deprecated
+ * @export
+ */
 export type ComcatCommandReplyPumpEmit = {
   pump_emit: never;
 };
@@ -92,7 +105,7 @@ export interface ComcatCommandPumpRaftMessaging {
   name: 'pump_raft_messaging';
   params: {
     category: string;
-    raft: RaftRequestMessaging;
+    raft: RaftRequestMessaging<ComcatBroadcastMessage>;
   };
 }
 export type ComcatCommandReplyPumpRaftMessaging = {

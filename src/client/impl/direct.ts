@@ -1,8 +1,8 @@
 import {
+  ComcatBroadcastMessage,
   ComcatCommandPipeClose,
   ComcatCommandPipeReceive,
   ComcatCommandPipeRegister,
-  ComcatCommandPumpEmit,
   ComcatCommandReplies,
   ComcatCommands,
   ComcatRPCProtocal,
@@ -37,8 +37,8 @@ class DirectScheduler {
     rpc.onRemoteCall = (msg, reply) => this.onRegister(rpc, msg, reply);
   }
 
-  public postMessage(msg: ComcatCommands, reply: (payload: any) => void) {
-    switch (msg.name) {
+  public postMessage(command: ComcatCommands, reply: (payload: any) => void) {
+    switch (command.name) {
       /**
        * In `direct` mode, since all transport happens within the context of
        * same tab, there is no need to elect a leader and so forth. So we just
@@ -57,27 +57,28 @@ class DirectScheduler {
         };
         return reply(resHeartbeat);
       case 'pump_raft_messaging':
+        const message = command.params.raft.message;
+        this.broadcast(message);
+
         const resMessaging: RaftResponseMessaging = {
-          isGranted: true,
+          isExpired: false,
+          term: 0,
         };
         return reply(resMessaging);
 
       // We don't keep track of pumps so just drop it.
       case 'pump_close':
         break;
-      case 'pump_emit':
-        return this.broadcast(msg);
 
       case 'pipe_close':
-        return this.unregisterPipe(msg);
+        return this.unregisterPipe(command);
 
       default:
         break;
     }
   }
 
-  private broadcast(command: ComcatCommandPumpEmit) {
-    const message = command.params;
+  private broadcast(message: ComcatBroadcastMessage) {
     const topic = message.topic;
 
     for (const pipe of this.pipes) {
