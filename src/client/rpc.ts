@@ -1,4 +1,4 @@
-import { ComcatRPCCommand, ComcatRPCProtocal, ComcatTransport } from '../type';
+import { ComcatRPCCommand, ComcatRPCProtocol, ComcatTransport } from '../type';
 
 const DEFAULT_TIMEOUT = 1000 * 60;
 
@@ -37,7 +37,7 @@ export class ComcatRPC<
   public call<CC extends C>(command: CC): Promise<R[CC['name']]> {
     const ack = ++this.ack;
 
-    const msg: ComcatRPCProtocal = {
+    const msg: ComcatRPCProtocol = {
       ack,
       type: 'call',
       payload: command,
@@ -74,9 +74,9 @@ export class ComcatRPC<
     });
   }
 
-  private onCall(message: ComcatRPCProtocal) {
+  private onCall(message: ComcatRPCProtocol) {
     const reply = (payload: any) => {
-      const msg: ComcatRPCProtocal = {
+      const msg: ComcatRPCProtocol = {
         ack: message.ack,
         type: 'reply',
         payload,
@@ -88,7 +88,7 @@ export class ComcatRPC<
     this.onRemoteCall(message.payload as C, reply);
   }
 
-  private onReply(message: ComcatRPCProtocal) {
+  private onReply(message: ComcatRPCProtocol) {
     const callback = this.popDeferredCallback(message.ack);
     if (!callback) {
       return;
@@ -97,7 +97,7 @@ export class ComcatRPC<
     callback(message.payload);
   }
 
-  private onMessage(message: ComcatRPCProtocal) {
+  private onMessage(message: ComcatRPCProtocol) {
     switch (message.type) {
       case 'call':
         return this.onCall(message);

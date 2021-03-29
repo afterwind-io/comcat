@@ -1,11 +1,11 @@
 import InlineWorker from 'web-worker:../../worker/index';
-import { ComcatTransport, ComcatRPCProtocal } from '../../type';
+import { ComcatTransport, ComcatRPCProtocol } from '../../type';
 import { Debug } from '../debug';
 
 const debug = new Debug('comcat-transport-worker');
 
 export class ComcatTransportSharedWorker implements ComcatTransport {
-  public onMessage: (message: ComcatRPCProtocal) => void = () => {};
+  public onMessage: (message: ComcatRPCProtocol) => void = () => {};
 
   private readonly worker: SharedWorker;
 
@@ -29,7 +29,7 @@ export class ComcatTransportSharedWorker implements ComcatTransport {
   }
 
   private onPortMessage(event: MessageEvent<any>) {
-    const message = event.data as ComcatRPCProtocal;
+    const message = event.data as ComcatRPCProtocol;
 
     debug.log(`[in]`, message);
 

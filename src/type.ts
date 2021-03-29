@@ -10,11 +10,11 @@ import {
 export interface ComcatTransport {
   connect(): void;
   disconnect(): void;
-  onMessage: (message: ComcatRPCProtocal) => void;
+  onMessage: (message: ComcatRPCProtocol) => void;
   postMessage(message: any): void;
 }
 
-export interface ComcatRPCProtocal {
+export interface ComcatRPCProtocol {
   ack: number;
   type: 'call' | 'reply';
   payload: ComcatRPCCommand;

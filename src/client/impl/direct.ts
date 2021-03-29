@@ -5,7 +5,7 @@ import {
   ComcatCommandPipeRegister,
   ComcatCommandReplies,
   ComcatCommands,
-  ComcatRPCProtocal,
+  ComcatRPCProtocol,
   ComcatTransport,
 } from '../../type';
 import { Debug } from '../debug';
@@ -32,7 +32,7 @@ class DirectScheduler {
     this.postMessage = this.postMessage.bind(this);
   }
 
-  public connect(transport: ComcatTransportDirectScehdulerProxy) {
+  public connect(transport: ComcatTransportDirectSchedulerProxy) {
     const rpc = new ComcatRPC<ComcatCommands, ComcatCommandReplies>(transport);
     rpc.onRemoteCall = (msg, reply) => this.onRegister(rpc, msg, reply);
   }
@@ -149,12 +149,12 @@ class DirectScheduler {
 const scheduler = new DirectScheduler();
 
 export class ComcatTransportDirect implements ComcatTransport {
-  public onMessage: (message: ComcatRPCProtocal) => void = () => {};
+  public onMessage: (message: ComcatRPCProtocol) => void = () => {};
 
-  private proxy: ComcatTransportDirectScehdulerProxy;
+  private proxy: ComcatTransportDirectSchedulerProxy;
 
   public constructor() {
-    this.proxy = new ComcatTransportDirectScehdulerProxy(this);
+    this.proxy = new ComcatTransportDirectSchedulerProxy(this);
   }
 
   public connect(): void {
@@ -172,8 +172,8 @@ export class ComcatTransportDirect implements ComcatTransport {
   }
 }
 
-class ComcatTransportDirectScehdulerProxy implements ComcatTransport {
-  public onMessage: (message: ComcatRPCProtocal) => void = () => {};
+class ComcatTransportDirectSchedulerProxy implements ComcatTransport {
+  public onMessage: (message: ComcatRPCProtocol) => void = () => {};
 
   private proxy: ComcatTransportDirect;
 

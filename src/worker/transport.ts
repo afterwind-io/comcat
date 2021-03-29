@@ -1,7 +1,7 @@
-import { ComcatRPCProtocal, ComcatTransport } from '../type';
+import { ComcatRPCProtocol, ComcatTransport } from '../type';
 
 export class Transport implements ComcatTransport {
-  public onMessage: (message: ComcatRPCProtocal) => void = () => {};
+  public onMessage: (message: ComcatRPCProtocol) => void = () => {};
 
   private port: MessagePort;
 
@@ -25,7 +25,7 @@ export class Transport implements ComcatTransport {
   }
 
   private onPortMessage(event: MessageEvent<any>) {
-    const message = event.data as ComcatRPCProtocal;
+    const message = event.data as ComcatRPCProtocol;
 
     console.log(`[in]`, message);
 

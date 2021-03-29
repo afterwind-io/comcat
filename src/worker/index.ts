@@ -13,10 +13,10 @@ import { Transport } from './transport';
 // @ts-ignore
 const worker = (self as unknown) as SharedWorkerGlobalScope;
 
-const pipeSchedueler = new ComcatPipeScheduler();
+const pipeScheduler = new ComcatPipeScheduler();
 const pumpScheduler = new ComcatPumpScheduler();
 
-pumpScheduler.onBroadcast = pipeSchedueler.broadcast.bind(pipeSchedueler);
+pumpScheduler.onBroadcast = pipeScheduler.broadcast.bind(pipeScheduler);
 
 worker.onconnect = (e: MessageEvent<any>) => {
   const port = e.ports[0];
@@ -30,7 +30,7 @@ worker.onconnect = (e: MessageEvent<any>) => {
         return reply(pumpScheduler.register(rpc, msg));
 
       case 'pipe_register':
-        return reply(pipeSchedueler.register(rpc, msg));
+        return reply(pipeScheduler.register(rpc, msg));
 
       default:
         break;
