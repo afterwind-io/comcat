@@ -7,7 +7,7 @@
 
 > :construction: Currently WIP. :construction:
 >
-> It works but not ready for production. **Use with caution**.
+> It works but needs polishing. **Use with caution**.
 
 Share single connection between multiple browser tabs/windows and more.
 
@@ -24,6 +24,12 @@ This library is currently aimed to solve a common problem:
 - Keep **one and only one** connection alive across tabs;
 
 With the unique characteristics of [`SharedWorker`][mdn-sharedworker], `Comcat` can automatically reconnect if the tab owns the connection is closed or even crashed. If you are keen on how it is accomplished, please refer to [How it works](#how-it-works).
+
+## Disclaimer
+
+`Comcat` **guarantees** eliminating duplicate connections or messages, but **does not guarantee** the integrity of all incoming messages. That means, messages **may be** lost in certain edge cases. 
+
+If it is a major concern over the message integrity, `Comcat` may not be suit to your app. Relevant details are discussed in [Caveats](#caveats).
 
 ## Get Started
 
@@ -186,7 +192,7 @@ The magic working behind the scene is known as "Consensus Algorithm". With the c
 
 Among the various algorithms, [Raft][raft] is relatively easy to understand and implement. However, it is designed for the purpose like building distributed log system, so it is still a little complicated against our needs. After all, we don't aim for strict safety. Besides, browser tabs are more likely to be opened and closed frequently, which is quite opposite to a stable cluster.
 
-Eventually, a tailored version of Raft is applied. The distributed part of the algorithm is ditched, since a scheduler working on `SharedWorker` plays the role as a centralized coordinator, which can chop down all consensus procedure between tabs. The concept of `term` is kept to detect stale leader or reject its message requests, thus help quickly recovering from abnormal situations.
+Eventually, a tailored version of Raft is applied. The distributed part of the algorithm is ditched, since a scheduler working on `SharedWorker` plays the role as a centralized coordinator, which can chop down all consensus procedure between tabs. The concept of `term` is kept to detect stale leader, thus help quickly recovering from abnormal situations.
 
 #### Overview
 
@@ -225,6 +231,8 @@ Invoked by `Candidate` to attempt to become leader.
 interface RaftRequestElect {
   // Actor's term
   term: number;
+  // Actor's ID
+  candidateId: string;
 }
 interface RaftResponseElect {
   // true if election succeed
@@ -253,21 +261,16 @@ interface RaftResponseHeartbeat {
 
 ##### Message Request RPC
 
-Invoked by `Leader` to check permission for broadcasting; Also act as a heartbeat.
+Invoked by `Leader` to check permission for broadcasting.
 
 ```typescript
 interface RaftRequestMessaging<T> {
-  // Actor's term
-  term: number;
+  // Actor's ID
+  leaderId: number;
   // The message to be sent
   message: T;
 }
-interface RaftResponseMessaging {
-  // true if there's another valid leader
-  isExpired: boolean;
-  // Dealer's term
-  term: number;
-}
+type RaftResponseMessaging = void;
 ```
 
 #### The Algorithm
@@ -278,15 +281,16 @@ The election is initiated by `Candidate` and issued every 5 seconds.
 
 When the election stage starts:
 
-- [`Actor`] Increase the local `term` by 1, and send it along `Election RPC` to `Dealer`
+- [`Actor`] Increase the local term by 1, and send it with `Election RPC` to `Dealer`
 - [`Dealer`] Check the incoming term(`a`) against local term(`b`):
   - If `a > b`, election succeed
-      - Override the local term with the incoming term
-      - Accept and reply with incoming term
+    - Override the local term with the incoming term
+    - Record the id of current leader
+    - Accept and reply with incoming term
   - Else, election failed
-      - Reject and reply with the local term
+    - Reject and reply with the local term
 - [`Actor`] Check the reply:
-  - If the election is granted, 
+  - If the election is granted,
     - Convert to `Leader`
     - Start heartbeat loop
   - Else,
@@ -299,13 +303,13 @@ The heartbeat is initiated by `Leader` and issued every 3 seconds.
 
 When the heartbeat stage starts:
 
-- [`Actor`] Increase the local `term` by 1, and send it along `Heartbeat RPC` to `Dealer`
+- [`Actor`] Increase the local term by 1, and send it with `Heartbeat RPC` to `Dealer`
 - [`Dealer`] Check the incoming term(`a`) against local term(`b`):
   - If `a > b`, heartbeat check succeed
-      - Override the local term with the incoming term
-      - Accept and reply with incoming term
+    - Override the local term with the incoming term
+    - Accept and reply with incoming term
   - Else, heartbeat check failed
-      - Reject and reply with the local term
+    - Reject and reply with the local term
 - [`Actor`] Check the reply:
   - If the heartbeat is expired,
     - Override the local term with the incoming term
@@ -316,33 +320,35 @@ When the heartbeat stage starts:
 
 ##### Message Request
 
-The message request is initiated by `Leader` and manually generated from user land. Since sending message is also a proof of activity, the rules for message request is the same as heartbeat.
+The message request is initiated by `Leader` and manually invoked from user land.
 
 When the message request stage starts:
 
-- [`Actor`] Increase the local `term` by 1, and send it along `Message Request RPC` to `Dealer`
-- [`Dealer`] Check the incoming term(`a`) against local term(`b`):
-  - If `a > b`, request check succeed
-      - Send the message
-      - Override the local term with the incoming term
-      - Accept and reply with incoming term
+- [`Actor`] Send its own id along `Message Request RPC` to `Dealer`
+- [`Dealer`] Check the incoming id(`a`) against current leader id(`b`):
+  - If `a == b`, request check succeed
+    - Send the message
   - Else, request check failed
-      - Reject and reply with the local term
-- [`Actor`] Check the reply:
-  - If the request is rejected,
-    - Override the local term with the incoming term
-    - Convert to `Candidate`
-    - Start election loop
-  - Else,
-    - Restart heartbeat loop
 
 #### Caveats
 
-There are some certain situations where:
+TL;DR: Messages **may be lost** during the shifting of `Leader`s.
 
-- A stale `Leader` is waiting for the response of heartbeat, but meanwhile one or more message requests are issued;
+Consider the following cases:
 
-TODO
+##### Case 1
+
+> The tab owns the connection is closed. X seconds later another tab is elected as leader and establishes the connection instead.
+
+Message lost after tab closing is unavoidable. One of our goals is to keep one and one connection alone, so there must be a vacancy period before a new `Leader` is elected. A possible way to solve this is to keep multiple connections, but apparently it is off-target here.
+
+##### Case 2
+
+> The tab owns the connection is freezed for a few seconds and then recovered. It is not the leader now, and it is waiting for confirmation from heartbeat request. During that exact period, one or more message requests are issued;
+
+As previously mentioned, if a stale `Leader` is tying to send messages, those requests will be instantly failed due to the leader id check. That means, those messages from the stale `Leader` will be "ditched" right away. Please be advised that this is **intentional**.
+
+Supposed that the actual connection we talked about is created by Websocket. While a stale `Leader` is waiting for heartbeat request, its connection is being **kept open**. If the server pushes a message right now, both the stale `Leader` and the current `Leader` will receive the message, and trying to issue a broadcast at the same time. This causes the same message being sent twice, which breaks the no-duplicate guarantee.
 
 ### Generating the embedded `SharedWorker`
 
