@@ -1,8 +1,11 @@
+import { getUniqueId } from './util';
+
 const INTERVAL_ELECTION = 5 * 1000;
 const INTERVAL_HEARTBEAT = 3 * 1000;
 
 export interface RaftRequestElect {
   term: number;
+  candidateId: string;
 }
 export interface RaftResponseElect {
   isGranted: boolean;
@@ -16,13 +19,10 @@ export interface RaftResponseHeartbeat {
   term: number;
 }
 export interface RaftRequestMessaging<T> {
-  term: number;
+  leaderId: string;
   message: T;
 }
-export interface RaftResponseMessaging {
-  term: number;
-  isExpired: boolean;
-}
+export type RaftResponseMessaging = void;
 
 export class RaftActor<T> {
   public onBecomeLeader!: () => void;
@@ -35,6 +35,7 @@ export class RaftActor<T> {
     req: RaftRequestMessaging<T>
   ) => Promise<RaftResponseMessaging>;
 
+  private readonly id: string = getUniqueId();
   private term: number = 0;
   private status: 'candidate' | 'leader' = 'candidate';
 
@@ -48,24 +49,17 @@ export class RaftActor<T> {
     this.elect();
   }
 
-  public async RequestMessaging(message: T) {
-    const { isExpired, term } = await this.onMessaging({
-      term: ++this.term,
+  public RequestMessaging(message: T): Promise<void> {
+    return this.onMessaging({
+      leaderId: this.id,
       message,
     });
-
-    if (isExpired) {
-      this.status = 'candidate';
-      this.onBecomeCandidate();
-    }
-
-    this.term = term;
-    this.loop();
   }
 
   private elect = async () => {
     const { isGranted, term } = await this.onElect({
       term: ++this.term,
+      candidateId: this.id,
     });
 
     if (isGranted) {
@@ -112,14 +106,17 @@ export class RaftDealer<T> {
   public onMessageRequest!: (message: T) => void;
 
   private term: number = 0;
+  private leaderId: string = '';
 
   public RequestElect(
     req: RaftRequestElect,
     reply: (res: RaftResponseElect) => void
   ) {
-    const { term } = req;
+    const { term, candidateId } = req;
     if (term > this.term) {
       this.term = term;
+      this.leaderId = candidateId;
+
       reply({ isGranted: true, term });
     } else {
       reply({ isGranted: false, term: this.term });
@@ -143,14 +140,11 @@ export class RaftDealer<T> {
     req: RaftRequestMessaging<T>,
     reply: (res: RaftResponseMessaging) => void
   ) {
-    const { term, message } = req;
-    if (term > this.term) {
-      this.term = term;
+    const { leaderId, message } = req;
+    if (leaderId === this.leaderId) {
       this.onMessageRequest(message);
-
-      reply({ isExpired: false, term });
-    } else {
-      reply({ isExpired: true, term: this.term });
     }
+
+    reply();
   }
 }
