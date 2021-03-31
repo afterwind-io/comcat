@@ -9,11 +9,7 @@ import {
   ComcatTransport,
 } from '../../type';
 import { Debug } from '../debug';
-import {
-  RaftResponseElect,
-  RaftResponseHeartbeat,
-  RaftResponseMessaging,
-} from '../raft';
+import { RaftResponseElect, RaftResponseHeartbeat } from '../raft';
 import { ComcatRPC } from '../rpc';
 
 const debug = new Debug('comcat-transport-direct');
@@ -60,11 +56,7 @@ class DirectScheduler {
         const message = command.params.raft.message;
         this.broadcast(message);
 
-        const resMessaging: RaftResponseMessaging = {
-          isExpired: false,
-          term: 0,
-        };
-        return reply(resMessaging);
+        return reply(void 0);
 
       // We don't keep track of pumps so just drop it.
       case 'pump_close':
