@@ -9,7 +9,7 @@ const webWorkerLoader = require(path.resolve(
 export default {
   input: 'src/client/index.ts',
   output: {
-    dir: 'example/comcat',
+    dir: 'dev/comcat',
   },
   plugins: [
     webWorkerLoader({

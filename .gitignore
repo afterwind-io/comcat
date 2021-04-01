@@ -1,5 +1,5 @@
 .archive
-example/comcat
+dev/comcat
 package-lock.json
 sync.sh
 

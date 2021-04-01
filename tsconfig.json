@@ -60,6 +60,7 @@
         "worker.d.ts"
     ],
     "exclude": [
-        "./.archive"
+        "./.archive",
+        "./example"
     ]
 }
