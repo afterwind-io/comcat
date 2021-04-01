@@ -1,4 +1,4 @@
-interface ComcatPipeOptions {
+export interface ComcatPipeOptions {
   topic: string | RegExp;
 }
 
@@ -15,11 +15,8 @@ export declare abstract class ComcatPipe {
   private onReceive;
 }
 
-export declare type ComcatPumpMode = 'standalone' | 'unique';
-
-interface ComcatPumpOptions {
+export interface ComcatPumpOptions {
   category: string;
-  mode: ComcatPumpMode;
 }
 
 export declare abstract class ComcatPump {

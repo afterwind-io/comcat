@@ -30,6 +30,5 @@ class PollingPump extends ComcatPump {
 
 const pump = new PollingPump({
   category: '<user_defined_category>',
-  mode: 'unique',
 });
 pump.start();

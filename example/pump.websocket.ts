@@ -29,6 +29,5 @@ class WebsocketPump extends ComcatPump {
 
 const pump = new WebsocketPump({
   category: '<user_defined_category>',
-  mode: 'unique',
 });
 pump.start();

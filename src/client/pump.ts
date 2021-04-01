@@ -22,7 +22,26 @@ const debug = new Debug('comcat-pump');
 
 interface ComcatPumpOptions {
   category: string;
-  mode: ComcatPumpMode;
+  /**
+   * **NOT IMPLEMENTED**
+   *
+   * Specify the strategy of connection management.
+   * 
+   * - `unique`
+   * 
+   * Indicates that only one connection created by this pump
+   * should be kept alive across all tabs.
+   * 
+   * - `standalone`
+   * 
+   * The connection is kept alive per tab and created
+   * as soon as this pump starts.
+   *
+   * @deprecated
+   * @type {ComcatPumpMode}
+   * @memberof ComcatPumpOptions
+   */
+  mode?: ComcatPumpMode;
 }
 
 export abstract class ComcatPump {
@@ -34,7 +53,7 @@ export abstract class ComcatPump {
   private status: 'idle' | 'sleep' | 'working' = 'idle';
 
   public constructor(options: ComcatPumpOptions) {
-    const { category, mode } = options;
+    const { category, mode = 'unique' } = options;
 
     this.category = category;
     this.mode = mode;
