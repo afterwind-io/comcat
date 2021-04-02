@@ -16,7 +16,7 @@ const debug = new Debug('comcat-transport-direct');
 
 interface ComcatPipeRegistry {
   id: string;
-  topic: RegExp;
+  topic: RegExp | null;
   rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
 }
 
@@ -75,7 +75,7 @@ class DirectScheduler {
 
     for (const pipe of this.pipes) {
       const topicFilter = pipe.topic;
-      if (!topicFilter.test(topic)) {
+      if (topicFilter && !topicFilter.test(topic)) {
         continue;
       }
 
@@ -120,7 +120,7 @@ class DirectScheduler {
       return false;
     }
 
-    const topicFilter = new RegExp(topic);
+    const topicFilter = topic == null ? topic : new RegExp(topic);
     const registry: ComcatPipeRegistry = {
       id,
       topic: topicFilter,
