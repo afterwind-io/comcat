@@ -76,20 +76,17 @@ class TimePollingPump extends ComcatPump {
   }
 }
 
-class TimePipe extends ComcatPipe {
-  protected onMessage(topic, data) {
-    console.log('[mock pipe]', data);
-  }
-}
-
 const pump = new TimePollingPump({
   category: 'example',
 });
 pump.start();
 
-const pipe = new TimePipe({
+const pipe = new ComcatPipe({
   topic: 'Time',
 });
+pipe.onMessage = (topic, data) => {
+  console.log('The current time is: ', data);
+};
 pipe.start();
 ```
 
@@ -217,28 +214,27 @@ The content of the message. Can be anything that `SharedWorker` supports, but wi
 
 ### ComcatPipe
 
-The base class for implementing customized pipes.
-
-Because it is an "abstract" class, `ComcatPipe` should never be instantiated directly. You need to derive your own class from it.
+The base class for constructing `Comcat` pipes.
 
 A typical customized pipe looks like this:
 
 ```typescript
 import { ComcatPipe } from 'comcat';
 
-class MyPipe extends ComcatPipe {
-  protected onMessage(topic: string, data: any) {
-    /**
-     * Do some works with the data
-     */
-  }
-}
+const pipe = new ComcatPipe({
+  topic: 'MyTopic',
+});
+pipe.onMessage = (topic, data) => {
+  /**
+   * Do some works with the data.
+   */
+};
 ```
 
 #### new ComcatPipe(options)
 
 ```typescript
-public constructor(options: ComcatPipeOptions);
+public constructor(options?: ComcatPipeOptions);
 
 interface ComcatPipeOptions {
   topic?: string | RegExp;
@@ -249,15 +245,27 @@ _`topic`_: [optional]
 
 The expected category of the messages. It can be either `string` or `RegExp`. If applied, the incoming message is filtered unless its topic exactly matches the provided string, or passes the `RegExp` test.
 
+#### ComcatPipe.start
+
+```typescript
+public start: () => Promise<boolean>;
+```
+
+Register the pipe and start listening for the messages from the upstream.
+
+Returns true if registry succeeds, or vice versa.
+
 #### ComcatPipe.onMessage
 
 ```typescript
-protected abstract onMessage(topic: string, data: any): void;
+public onMessage: (topic: string, data: any) => void;
 ```
 
-> :warning: Please notice that `onMessage` is an "abstract" method, which means you should always implement it in your derived class.
+> :warning: **The default method is only a placeholder. Always override with your own callback.**
 
-Invoked when messages arrive. Note that the messages arrived here have already been filtered by the `topic` provided in construction options. If a `RegExp` topic is applied, you can
+Invoked when messages arrive.
+
+Note that the messages arrives here have already been filtered by the `topic` provided in construction options.
 
 _`topic`_:
 

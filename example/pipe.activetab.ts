@@ -6,17 +6,16 @@
 
 import { ComcatPipe } from 'comcat';
 
-class ActiveTabPipe extends ComcatPipe {
-  protected onMessage(topic: string, data: any) {
-    if (window.document.visibilityState === 'hidden') {
-      return;
-    }
-
-    console.log(topic, data);
+const pipe = new ComcatPipe();
+pipe.onMessage = (topic: string, data: any) => {
+  if (window.document.visibilityState === 'hidden') {
+    return;
   }
-}
 
-const pipe = new ActiveTabPipe({
-  topic: /.*/,
-});
+  /**
+   * Do some works with the data
+   */
+  console.log(topic, data);
+};
+
 pipe.start();
