@@ -8,17 +8,17 @@ import { getTransport } from './transport';
 import { getUniqueId } from './util';
 
 interface ComcatPipeOptions {
-  topic: string | RegExp;
+  topic?: string | RegExp;
 }
 
 export abstract class ComcatPipe {
   private readonly id: string;
   private readonly rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
-  private readonly topic: string | RegExp;
+  private readonly topic: string | RegExp | null;
   private status: 'idle' | 'working' = 'idle';
 
   public constructor(options: ComcatPipeOptions) {
-    const { topic } = options;
+    const { topic = null } = options;
 
     this.topic = topic;
 
@@ -37,7 +37,7 @@ export abstract class ComcatPipe {
 
     try {
       const topic = this.topic;
-      const topicFilter = typeof topic === 'string' ? topic : topic.source;
+      const topicFilter = getTopicRepr(topic);
 
       await this.rpc.call({
         name: 'pipe_register',
@@ -78,4 +78,12 @@ export abstract class ComcatPipe {
     const { topic, data } = cmd.params;
     this.onMessage(topic, data);
   }
+}
+
+function getTopicRepr(topic: string | RegExp | null): string | null {
+  if (topic == null || typeof topic == 'string') {
+    return topic;
+  }
+
+  return topic.source;
 }

@@ -116,7 +116,7 @@ export interface ComcatCommandPipeRegister {
   name: 'pipe_register';
   params: {
     id: string;
-    topic: string;
+    topic: string | null;
   };
 }
 export type ComcatCommandReplyPipeRegister = {

@@ -1,5 +1,5 @@
 export interface ComcatPipeOptions {
-  topic: string | RegExp;
+  topic?: string | RegExp;
 }
 
 export declare abstract class ComcatPipe {

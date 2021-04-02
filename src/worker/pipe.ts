@@ -10,7 +10,7 @@ import {
 
 interface ComcatPipeRegistry {
   id: string;
-  topic: RegExp;
+  topic: RegExp | null;
   rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
 }
 
@@ -22,7 +22,7 @@ export class ComcatPipeScheduler {
 
     for (const pipe of this.pipes) {
       const topicFilter = pipe.topic;
-      if (!topicFilter.test(topic)) {
+      if (topicFilter && !topicFilter.test(topic)) {
         continue;
       }
 
@@ -47,7 +47,7 @@ export class ComcatPipeScheduler {
       return false;
     }
 
-    const topicFilter = new RegExp(topic);
+    const topicFilter = topic == null ? topic : new RegExp(topic);
     const registry: ComcatPipeRegistry = {
       id,
       topic: topicFilter,
