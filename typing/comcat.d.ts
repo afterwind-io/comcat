@@ -46,24 +46,77 @@ export declare class ComcatPipe {
 }
 
 export interface ComcatPumpOptions {
+  /**
+   * An identifier to classify different message sources.
+   *
+   * Each category is coupled with only one type of connection,
+   * so you can not create multiple pumps with same category.
+   *
+   * @type {string}
+   * @memberof ComcatPumpOptions
+   */
   category: string;
 }
 
+/**
+ * The base class for constructing `Comcat` pumps.
+ *
+ * @export
+ * @class ComcatPump
+ */
 export declare abstract class ComcatPump {
-  private readonly category;
-  private readonly id;
-  private readonly mode;
-  private readonly rpc;
-  private status;
   constructor(options: ComcatPumpOptions);
+  /**
+   * **The default method is only a placeholder. Always override with your own callback.**
+   *
+   * ---
+   *
+   * Invoked when `Comcat` tries to connect to your backend.
+   *
+   * @virtual
+   * @memberof ComcatPump
+   */
+  onConnect: () => void;
+  /**
+   * **The default method is only a placeholder. Always override with your own callback.**
+   *
+   * ---
+   *
+   * Invoked when `Comcat` tries to disconnect to your backend.
+   *
+   * Don't permanently dispose anything here,
+   * because your pump may be rearranged connecting again.
+   *
+   * @virtual
+   * @memberof ComcatPump
+   */
+  onDisconnect: () => void;
+  /**
+   * Register the pump and try to start the underlying connection.
+   *
+   * Because the connection is managed by `Comcat`,
+   * it may be postponed until scheduled.
+   *
+   * @returns {Promise<boolean>} A flag indicates whether the registry succeeds or not.
+   * @memberof ComcatPump
+   */
   start(): Promise<boolean>;
-  stop(): void;
-  protected abstract connect(): void;
-  protected abstract disconnect(): void;
-  protected pump(topic: string, data: any): Promise<never>;
-  private onCall;
-  private onOpen;
-  private onDispose;
+  /**
+   * Send the message with a specified topic.
+   *
+   * @param {string} topic
+   * The category of the message.
+   * It is used to help filtering messages in different aspects.
+   *
+   * @param {*} data
+   * The content of the message.
+   * Can be anything that `SharedWorker` supports, but with some restrictions.
+   * Please see [_Transferring data to and from workers: further details_](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers#transferring_data_to_and_from_workers_further_details)
+   *
+   * @returns {Promise<void>}
+   * @memberof ComcatPump
+   */
+  pump(topic: string, data: any): Promise<void>;
 }
 
 type ComcatWorkingMode = 'default' | 'legacy' | 'direct';

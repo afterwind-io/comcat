@@ -6,28 +6,40 @@
 
 import { ComcatPump } from 'comcat';
 
-class WebsocketPump extends ComcatPump {
+class WebsocketPump {
+  private readonly pump: ComcatPump;
+
   private ws: WebSocket | null = null;
 
-  protected connect() {
+  public constructor() {
+    this.pump = new ComcatPump({
+      category: 'example',
+    });
+    this.pump.onConnect = this.onConnect.bind(this);
+    this.pump.onDisconnect = this.onDisconnect.bind(this);
+  }
+
+  public start() {
+    this.pump.start();
+  }
+
+  private onConnect() {
     const ws = new WebSocket('wss://echo.websocket.org/');
     ws.onmessage = this.onMessage.bind(this);
 
     this.ws = ws;
   }
 
-  protected disconnect() {
+  private onDisconnect() {
     this.ws.close();
     this.ws = null;
   }
 
   private onMessage(event: MessageEvent<any>) {
     const message = event.data;
-    this.pump('<user_defined_topic>', message);
+    this.pump.pump('example', message);
   }
 }
 
-const pump = new WebsocketPump({
-  category: '<user_defined_category>',
-});
+const pump = new WebsocketPump();
 pump.start();

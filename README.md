@@ -103,7 +103,7 @@ pipe.start();
 You have full control of how to connect, and disconnect, to the source of the message, often the server. Moreover, it is up to you to determine when and what to send. `Comcat` only manages the timing of connection and disconnection for you.
 
 If needed, you can create multiple `Pump`s to deal with various sources. `Comcat`
-uses `category` to identify different groups of pumps. Only pumps within the same group, classified by the same `category` per se, will be scheduled to keep only one active connection.
+uses `category` to identify different groups of pumps. There is only one active connection in each group, thus the tabs own the active connections may not be the same.
 
 ### Pipe
 
@@ -120,9 +120,7 @@ The repository contains several examples covering the basic usage. Please see [e
 
 ### ComcatPump
 
-The base class for implementing customized pumps.
-
-Because it is an "abstract" class, `ComcatPump` should never be instantiated directly. You need to derive your own class from it.
+The base class for constructing `Comcat` pumps.
 
 A typical customized pump looks like this:
 
@@ -131,21 +129,22 @@ A typical customized pump looks like this:
 
 import { ComcatPump } from 'comcat';
 
-class MyPump extends ComcatPump {
-  protected connect() {
-    /**
-     * Do the connection here.
-     *
-     * ...and some other works maybe
-     */
-  }
+const pump = new ComcatPump({
+  category: 'MyCategory',
+});
 
-  protected disconnect() {
-    /**
-     * Do the disconnection here.
-     */
-  }
-}
+pump.onConnect = () => {
+  /**
+   * Do the connection here.
+   *
+   * ...and some other works maybe
+   */
+};
+pump.onDisconnect = () => {
+  /**
+   * Do the disconnection here.
+   */
+};
 ```
 
 #### new ComcatPump(options)
@@ -167,34 +166,36 @@ Each category is coupled with only one type of connection, so you can not create
 #### ComcatPump.start
 
 ```typescript
-public start: () => void;
+public start: () => Promise<boolean>;
 ```
 
 Register the pump and try to start the underlying connection.
 
 Because the connection is managed by `Comcat`, it may be postponed until scheduled.
 
-#### ComcatPump.connect
+Returns true if registry succeeds, or vice versa.
+
+#### ComcatPump.onConnect
 
 ```typescript
-protected abstract connect: () => void;
+public onConnect: () => void;
 ```
 
-> :warning: Please notice that `connect` is an "abstract" method, which means you should always implement it in your derived class.
+> :warning: **The default method is only a placeholder. Always override with your own callback.**
 
 Invoked when `Comcat` tries to connect to your backend. Basically your connection code goes here.
 
-#### ComcatPump.disconnect
+#### ComcatPump.onDisconnect
 
 ```typescript
-protected abstract disconnect: () => void;
+public onDisconnect: () => void;
 ```
 
-> :warning: Please notice that `disconnect` is an "abstract" method, which means you should always implement it in your derived class.
+> :warning: **The default method is only a placeholder. Always override with your own callback.**
 
 Invoked when `Comcat` tries to disconnect to your backend. Basically your disconnection code goes here.
 
-Don't permanently dispose anything here, for your pump may be rearranged connecting again.
+Don't permanently dispose anything here, because your pump may be rearranged connecting again.
 
 #### ComcatPump.pump
 

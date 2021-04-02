@@ -6,29 +6,41 @@
 
 import { ComcatPump } from 'comcat';
 
-class PollingPump extends ComcatPump {
+class PollingPump {
   private readonly interval = 60 * 1000;
+  private readonly pump: ComcatPump;
+
   private intervalHandler = -1;
 
-  protected connect() {
+  public constructor() {
+    this.pump = new ComcatPump({
+      category: 'example',
+    });
+    this.pump.onConnect = this.onConnect.bind(this);
+    this.pump.onDisconnect = this.onDisconnect.bind(this);
+  }
+
+  public start() {
+    this.pump.start();
+  }
+
+  private onConnect() {
     this.intervalHandler = setInterval(() => {
       fetch('http://worldtimeapi.org/api/ip')
         .then((res) => {
           return res.json();
         })
         .then((data) => {
-          this.pump('Time', data.datetime);
-          this.pump('Unix', data.unixtime);
+          this.pump.pump('Time', data.datetime);
+          this.pump.pump('Unix', data.unixtime);
         });
     }, this.interval);
   }
 
-  protected disconnect() {
+  private onDisconnect() {
     clearInterval(this.intervalHandler);
   }
 }
 
-const pump = new PollingPump({
-  category: '<user_defined_category>',
-});
+const pump = new PollingPump();
 pump.start();

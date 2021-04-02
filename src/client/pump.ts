@@ -21,19 +21,28 @@ import {
 const debug = new Debug('comcat-pump');
 
 interface ComcatPumpOptions {
+  /**
+   * An identifier to classify different message sources.
+   *
+   * Each category is coupled with only one type of connection,
+   * so you can not create multiple pumps with same category.
+   *
+   * @type {string}
+   * @memberof ComcatPumpOptions
+   */
   category: string;
   /**
    * **NOT IMPLEMENTED**
    *
    * Specify the strategy of connection management.
-   * 
+   *
    * - `unique`
-   * 
+   *
    * Indicates that only one connection created by this pump
    * should be kept alive across all tabs.
-   * 
+   *
    * - `standalone`
-   * 
+   *
    * The connection is kept alive per tab and created
    * as soon as this pump starts.
    *
@@ -44,7 +53,13 @@ interface ComcatPumpOptions {
   mode?: ComcatPumpMode;
 }
 
-export abstract class ComcatPump {
+/**
+ * The base class for constructing `Comcat` pumps.
+ *
+ * @export
+ * @class ComcatPump
+ */
+export class ComcatPump {
   private readonly category: string;
   private readonly id: string;
   private readonly mode: ComcatPumpMode;
@@ -72,6 +87,52 @@ export abstract class ComcatPump {
     window.addEventListener('unload', this.onDispose);
   }
 
+  /**
+   * **The default method is only a placeholder. Always override with your own callback.**
+   *
+   * ---
+   *
+   * Invoked when `Comcat` tries to connect to your backend.
+   *
+   * @virtual
+   * @memberof ComcatPump
+   */
+  public onConnect = () => {
+    debug.error(
+      `DO NOT use the default "ComcatPump.onConnect" method.` +
+        `It is only a placeholder, and you should always provide your own callback.`
+    );
+  };
+
+  /**
+   * **The default method is only a placeholder. Always override with your own callback.**
+   *
+   * ---
+   *
+   * Invoked when `Comcat` tries to disconnect to your backend.
+   *
+   * Don't permanently dispose anything here,
+   * because your pump may be rearranged connecting again.
+   *
+   * @virtual
+   * @memberof ComcatPump
+   */
+  public onDisconnect = () => {
+    debug.error(
+      `DO NOT use the default "ComcatPump.onDisconnect" method.` +
+        `It is only a placeholder, and you should always provide your own callback.`
+    );
+  };
+
+  /**
+   * Register the pump and try to start the underlying connection.
+   *
+   * Because the connection is managed by `Comcat`,
+   * it may be postponed until scheduled.
+   *
+   * @returns {Promise<boolean>} A flag indicates whether the registry succeeds or not.
+   * @memberof ComcatPump
+   */
   public async start(): Promise<boolean> {
     if (this.status !== 'idle') {
       return false;
@@ -100,10 +161,22 @@ export abstract class ComcatPump {
     }
   }
 
-  protected abstract connect(): void;
-  protected abstract disconnect(): void;
-
-  protected async pump(topic: string, data: any): Promise<void> {
+  /**
+   * Send the message with a specified topic.
+   *
+   * @param {string} topic
+   * The category of the message.
+   * It is used to help filtering messages in different aspects.
+   *
+   * @param {*} data
+   * The content of the message.
+   * Can be anything that `SharedWorker` supports, but with some restrictions.
+   * Please see [_Transferring data to and from workers: further details_](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers#transferring_data_to_and_from_workers_further_details)
+   *
+   * @returns {Promise<void>}
+   * @memberof ComcatPump
+   */
+  public async pump(topic: string, data: any): Promise<void> {
     if (!this.raft.IsLeader) {
       return;
     }
@@ -112,7 +185,7 @@ export abstract class ComcatPump {
   }
 
   private onDispose = () => {
-    this.disconnect();
+    this.onDisconnect();
 
     this.rpc.call({
       name: 'pump_close',
@@ -124,14 +197,14 @@ export abstract class ComcatPump {
 
   private onRaftBecomeLeader = () => {
     // FIXME connect过程有可能是异步的
-    this.connect();
+    this.onConnect();
     this.status = 'working';
 
     debug.log(`pump "${this.category}-${this.id}" activated.`);
   };
 
   private onRaftBecomeCandidate = () => {
-    this.disconnect();
+    this.onDisconnect();
     this.status = 'sleep';
 
     debug.log(`pump "${this.category}-${this.id}" inactivated.`);
