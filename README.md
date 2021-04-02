@@ -1,13 +1,13 @@
 # :cat:Comcat
 
 [![Version][version-badge]][npm]
-[![License][license-badge]][license]
+[![License][license-badge]](LICENSE)
 
 <!-- ![Downloads][download-badge] -->
 
 > :construction: Currently WIP. :construction:
 >
-> It works but needs polishing. **Use with caution**.
+> It works fine but needs polishing. **Use with caution**.
 
 Share single connection between multiple browser tabs/windows and more.
 
@@ -27,7 +27,7 @@ With the unique characteristics of [`SharedWorker`][mdn-sharedworker], `Comcat` 
 
 ## Disclaimer
 
-`Comcat` **guarantees** eliminating duplicate connections or messages, but **does not guarantee** the integrity of all incoming messages. That means, messages **may be** lost in certain edge cases. 
+`Comcat` **guarantees** eliminating duplicate connections or messages, but **does not guarantee** the integrity of all incoming messages. That means, messages **may be** lost in certain edge cases.
 
 If it is a major concern over the message integrity, `Comcat` may not be suit to your app. Relevant details are discussed in [Caveats](#caveats).
 
@@ -55,7 +55,7 @@ For demonstration purpose, here we implement a minimal example to share time inf
 import { ComcatPump, ComcatPipe } from 'comcat';
 
 class TimePollingPump extends ComcatPump {
-  private interval = 60 * 1000;
+  private readonly interval = 60 * 1000;
   private intervalHandler = -1;
 
   protected connect() {
@@ -83,8 +83,7 @@ class TimePipe extends ComcatPipe {
 }
 
 const pump = new TimePollingPump({
-  category: 'time',
-  mode: 'unique',
+  category: 'example',
 });
 pump.start();
 
@@ -96,33 +95,195 @@ pipe.start();
 
 ## The Concepts
 
+### Overview
+
+![overview](assets/overview.png)
+
 ### Pump
 
-<!-- 一个`pump`对应一个连接，以`category`区分。
+`Pump` behaves like a "Message Provider". It is responsible for creating the connection to the backend and then feed the messages to the further consumer.
 
-如果`pump`的工作模式为`unique`，则系统确保在多页面实例时，同一个`category`下有且仅有一个`pump`保持连接。 -->
+You have full control of how to connect, and disconnect, to the source of the message, often the server. Moreover, it is up to you to determine when and what to send. `Comcat` only manages the timing of connection and disconnection for you.
 
-TODO
+If needed, you can create multiple `Pump`s to deal with various sources. `Comcat`
+uses `category` to identify different groups of pumps. Only pumps within the same group, classified by the same `category` per se, will be scheduled to keep only one active connection.
 
 ### Pipe
 
-TODO
+`Pipe` is the "Message Receiver". It notifies the user when the message arrives, and is meant to be a intermediary between `Comcat` and the consumer.
+
+`Pipe` provides basic filtering based on `topic`, but you can choose whether to accept the incoming message, or even modify the content before
+it is pushed to the consumer.
+
+## Recipes
+
+The repository contains several examples covering the basic usage. Please see [example/README.md](example/README.md)
 
 ## APIs
 
-### `Comcat.setMode`
+### ComcatPump
+
+The base class for implementing customized pumps.
+
+Because it is an "abstract" class, `ComcatPump` should never be instantiated directly. You need to derive your own class from it.
+
+A typical customized pump looks like this:
 
 ```typescript
-type setMode = (mode: 'default' | 'direct' = 'default') => void;
+// myPump.ts
+
+import { ComcatPump } from 'comcat';
+
+class MyPump extends ComcatPump {
+  protected connect() {
+    /**
+     * Do the connection here.
+     *
+     * ...and some other works maybe
+     */
+  }
+
+  protected disconnect() {
+    /**
+     * Do the disconnection here.
+     */
+  }
+}
 ```
 
-_Specify the underlying implementation._
+#### new ComcatPump(options)
+
+```typescript
+public constructor(options: ComcatPumpOptions);
+
+interface ComcatPumpOptions {
+  category: string;
+}
+```
+
+_`category`_:
+
+An identifier to classify different message sources.
+
+Each category is coupled with only one type of connection, so you can not create multiple pumps with same category.
+
+#### ComcatPump.start
+
+```typescript
+public start: () => void;
+```
+
+Register the pump and try to start the underlying connection.
+
+Because the connection is managed by `Comcat`, it may be postponed until scheduled.
+
+#### ComcatPump.connect
+
+```typescript
+protected abstract connect: () => void;
+```
+
+> :warning: Please notice that `connect` is an "abstract" method, which means you should always implement it in your derived class.
+
+Invoked when `Comcat` tries to connect to your backend. Basically your connection code goes here.
+
+#### ComcatPump.disconnect
+
+```typescript
+protected abstract disconnect: () => void;
+```
+
+> :warning: Please notice that `disconnect` is an "abstract" method, which means you should always implement it in your derived class.
+
+Invoked when `Comcat` tries to disconnect to your backend. Basically your disconnection code goes here.
+
+Don't permanently dispose anything here, for your pump may be rearranged connecting again.
+
+#### ComcatPump.pump
+
+```typescript
+protected pump: (topic: string, data: any) => Promise<void>;
+```
+
+Send the message with a specified topic.
+
+_`topic`_:
+
+The category of the message. It is used to help filtering messages in different aspects.
+
+_`data`_:
+
+The content of the message. Can be anything that `SharedWorker` supports, but with some restrictions. Please see [_Transferring data to and from workers: further details_][mdn-transfer]
+
+### ComcatPipe
+
+The base class for implementing customized pipes.
+
+Because it is an "abstract" class, `ComcatPipe` should never be instantiated directly. You need to derive your own class from it.
+
+A typical customized pipe looks like this:
+
+```typescript
+import { ComcatPipe } from 'comcat';
+
+class MyPipe extends ComcatPipe {
+  protected onMessage(topic: string, data: any) {
+    /**
+     * Do some works with the data
+     */
+  }
+}
+```
+
+#### new ComcatPipe(options)
+
+```typescript
+public constructor(options: ComcatPipeOptions);
+
+interface ComcatPipeOptions {
+  topic?: string | RegExp;
+}
+```
+
+_`topic`_: [optional]
+
+The expected category of the messages. It can be either `string` or `RegExp`. If applied, the incoming message is filtered unless its topic exactly matches the provided string, or passes the `RegExp` test.
+
+#### ComcatPipe.onMessage
+
+```typescript
+protected abstract onMessage(topic: string, data: any): void;
+```
+
+> :warning: Please notice that `onMessage` is an "abstract" method, which means you should always implement it in your derived class.
+
+Invoked when messages arrive. Note that the messages arrived here have already been filtered by the `topic` provided in construction options. If a `RegExp` topic is applied, you can
+
+_`topic`_:
+
+The topic of the message;
+
+_`data`_:
+
+The content of the message;
+
+### Comcat
+
+Provides global settings that alter how `Comcat` works.
+
+#### Comcat.setMode
+
+```typescript
+public setMode: (mode: 'default' | 'direct' = 'default') => void;
+```
+
+Specify the underlying implementation.
 
 By default `Comcat` uses `SharedWebworker` to share connection and send messages across tabs/windows. If `SharedWebworker` is not supported, `Comcat` will fall back to the `direct` mode.
 
 When running in `direct` Mode, all cross-tab features are disabled due to lack of cross-tab ability. The connection activated by `pump` is created per tab. The messages sent by `pump` are broadcasted back to the pipes on the same tab. Thus, it behaves just like a normal event bus.
 
-Normally you should just leave it be.
+Usually you should just leave it be.
 
 ```javascript
 import { Comcat } from 'comcat';
@@ -130,13 +291,13 @@ import { Comcat } from 'comcat';
 Comcat.setMode('direct');
 ```
 
-### `Comcat.enableDebug`
+#### Comcat.enableDebug
 
 ```typescript
-type enableDebug = (flag: boolean) => void;
+public enableDebug: (flag: boolean) => void;
 ```
 
-_Determines whether enabling the full debug logging, including inner status and transport information._
+Determines whether enabling the full debug logging, including inner status and transport information.
 
 Comcat will log every message through the transport, and some basic status information to the console. By default, these output is suppressed.
 
@@ -391,7 +552,7 @@ Now each tab can point to the same worker. Problem solved.
 
 ## Browser Compatibility
 
-Because the core functionality is heavily rely on `SharedWorker`, the minimum requirements are as follows:
+Because the core functionality is heavily rely on `SharedWorker`, the minimum requirements are aligned with `SharedWorker` as follows:
 
 - `Chrome`: 4
 - `Firefox`: 29
@@ -404,6 +565,11 @@ You can refer to ["Can I Use"][caniuse-sharedworker] for more compatibility deta
 
 NO.
 
+## Roadmap
+
+- [ ] (Maybe) Extend `Pump` concept to enable sending messages to `Leader Pump`, to further support two-way communication sharing single connection;
+- [ ] Better debug information;
+
 ## Todos
 
 - [x] ~~Move topic filtering of pipe to the worker;~~
@@ -411,16 +577,22 @@ NO.
 - [x] ~~Use simplified raft-like consensus algorithm to ensure single connection;~~
 - [x] ~~Use Data URL to achieve inline SharedWorker;~~
 - [ ] Prevent creating multiple `pump` with same `category`;
+- [x] Topic wildcard;
+- [ ] Deal with leader connection error;
 
 ## License
 
-[MIT][license]
+[MIT](LICENSE)
+
+<!-- Badges -->
 
 [version-badge]: https://img.shields.io/npm/v/comcat.svg
 [npm]: https://www.npmjs.com/package/comcat
 [download-badge]: https://img.shields.io/npm/dt/comcat.svg
-[license]: LICENSE
 [license-badge]: https://img.shields.io/npm/l/comcat.svg
+
+<!-- References -->
+
 [caniuse-sharedworker]: https://caniuse.com/mdn-api_sharedworker
 [spec-sharedworker]: https://html.spec.whatwg.org/multipage/workers.html#shared-workers-and-the-sharedworker-interface
 [mdn-sharedworker]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers#shared_workers
@@ -428,4 +600,5 @@ NO.
 [mdn-postmessage]: https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
 [mdn-storageevent]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API#responding_to_storage_changes_with_the_storageevent
 [mdn-broadcast]: https://developer.mozilla.org/en-US/docs/Web/API/Broadcast_Channel_API
+[mdn-transfer]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers#transferring_data_to_and_from_workers_further_details
 [raft]: https://raft.github.io/
