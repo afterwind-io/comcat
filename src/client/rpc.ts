@@ -1,4 +1,5 @@
 import { ComcatRPCCommand, ComcatRPCProtocol, ComcatTransport } from '../type';
+import { blackhole } from './util';
 
 const DEFAULT_TIMEOUT = 1000 * 60;
 
@@ -15,7 +16,7 @@ export class ComcatRPC<
   public onRemoteCall: (
     msg: C,
     reply: (payload: any) => void
-  ) => void = () => {};
+  ) => void = blackhole;
 
   private readonly callbacks: { [ack: number]: DeferredCallback } = {};
   private readonly timeout: number;
@@ -56,7 +57,7 @@ export class ComcatRPC<
 
   public close() {
     this.transport.disconnect();
-    this.transport.onMessage = () => {};
+    this.transport.onMessage = blackhole;
   }
 
   private createDeferredPromise(ack: number): Promise<unknown> {

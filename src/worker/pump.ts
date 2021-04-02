@@ -5,6 +5,7 @@ import {
   RaftResponseMessaging,
 } from '../client/raft';
 import { ComcatRPC } from '../client/rpc';
+import { blackhole } from '../client/util';
 import {
   ComcatBroadcastMessage,
   ComcatCommandPumpClose,
@@ -25,7 +26,7 @@ interface ComcatPumpRegistry {
 }
 
 export class ComcatPumpScheduler {
-  public onBroadcast: (message: ComcatBroadcastMessage) => void = () => {};
+  public onBroadcast: (message: ComcatBroadcastMessage) => void = blackhole;
 
   private pumps: Map<
     string, // id

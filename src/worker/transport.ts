@@ -1,7 +1,8 @@
+import { blackhole } from '../client/util';
 import { ComcatRPCProtocol, ComcatTransport } from '../type';
 
 export class Transport implements ComcatTransport {
-  public onMessage: (message: ComcatRPCProtocol) => void = () => {};
+  public onMessage: (message: ComcatRPCProtocol) => void = blackhole;
 
   private port: MessagePort;
 

@@ -11,6 +11,7 @@ import {
 import { Debug } from '../debug';
 import { RaftResponseElect, RaftResponseHeartbeat } from '../raft';
 import { ComcatRPC } from '../rpc';
+import { blackhole } from '../util';
 
 const debug = new Debug('comcat-transport-direct');
 
@@ -141,7 +142,7 @@ class DirectScheduler {
 const scheduler = new DirectScheduler();
 
 export class ComcatTransportDirect implements ComcatTransport {
-  public onMessage: (message: ComcatRPCProtocol) => void = () => {};
+  public onMessage: (message: ComcatRPCProtocol) => void = blackhole;
 
   private proxy: ComcatTransportDirectSchedulerProxy;
 
@@ -165,7 +166,7 @@ export class ComcatTransportDirect implements ComcatTransport {
 }
 
 class ComcatTransportDirectSchedulerProxy implements ComcatTransport {
-  public onMessage: (message: ComcatRPCProtocol) => void = () => {};
+  public onMessage: (message: ComcatRPCProtocol) => void = blackhole;
 
   private proxy: ComcatTransportDirect;
 

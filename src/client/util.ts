@@ -8,3 +8,5 @@ export function getUniqueId(): string {
 
   return id;
 }
+
+export function blackhole(...params: any[]): any {}
