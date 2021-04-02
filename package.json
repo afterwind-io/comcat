@@ -37,7 +37,7 @@
     "dev": "rollup -c build/dev.js",
     "prepublishOnly": "rm -rf ./dist&&npm run prod&&npm run typing",
     "prod": "rollup -c build/prod.js",
-    "server": "http-server example -p 9001 -c-1",
+    "server": "http-server dev -p 9001 -c-1",
     "typing": "cp typing/comcat.d.ts dist"
   },
   "license": "MIT"
