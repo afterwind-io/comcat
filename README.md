@@ -617,16 +617,6 @@ NO.
 - [ ] (Maybe) Extend `Pump` concept to enable sending messages to `Leader Pump`, to further support two-way communication sharing single connection;
 - [ ] Better debug information;
 
-## Todos
-
-- [x] ~~Move topic filtering of pipe to the worker;~~
-- [x] ~~Only output debug info if enabled~~;
-- [x] ~~Use simplified raft-like consensus algorithm to ensure single connection;~~
-- [x] ~~Use Data URL to achieve inline SharedWorker;~~
-- [ ] Prevent creating multiple `pump` with same `category`;
-- [x] ~~Topic wildcard~~;
-- [x] ~~Deal with leader connection error~~;
-
 ## License
 
 [MIT](LICENSE)

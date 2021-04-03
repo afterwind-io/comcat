@@ -60,6 +60,8 @@ interface ComcatPumpOptions {
  * @class ComcatPump
  */
 export class ComcatPump {
+  private static categoryRegistry: Record<string, boolean> = {};
+
   private readonly category: string;
   private readonly id: string;
   private readonly mode: ComcatPumpMode;
@@ -151,13 +153,21 @@ export class ComcatPump {
       return false;
     }
 
+    const category = this.category;
+    if (category in ComcatPump.categoryRegistry) {
+      debug.error(`Can not create multiple pumps with category "${category}"`);
+
+      return false;
+    }
+    ComcatPump.categoryRegistry[category] = true;
+
     try {
       const isRegistryValid = await this.rpc.call({
         name: 'pump_register',
         params: {
           id: this.id,
           mode: this.mode,
-          category: this.category,
+          category,
         },
       });
       if (!isRegistryValid) {
