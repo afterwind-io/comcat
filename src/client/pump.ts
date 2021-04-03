@@ -87,6 +87,10 @@ export class ComcatPump {
     window.addEventListener('unload', this.onDispose);
   }
 
+  private get tag(): string {
+    return `${this.category}-${this.id}`;
+  }
+
   /**
    * **The default method is only a placeholder. Always override with your own callback.**
    *
@@ -94,10 +98,19 @@ export class ComcatPump {
    *
    * Invoked when `Comcat` tries to connect to your backend.
    *
+   * You can fine-tune the inner behavior by returning a flag indicates
+   * whether the connection is successful.
+   *
+   * If the return value is `false`, or an error is raised,
+   * `Comcat` will either retry the connection after a short period of time,
+   * or schedule another tab to do the job.
+   *
+   * If no value is returned, `Comcat` will treat the result as successful anyway.
+   *
    * @virtual
    * @memberof ComcatPump
    */
-  public onConnect = () => {
+  public onConnect = (): Promise<boolean> | void => {
     debug.error(
       `DO NOT use the default "ComcatPump.onConnect" method.` +
         `It is only a placeholder, and you should always provide your own callback.`
@@ -112,7 +125,7 @@ export class ComcatPump {
    * Invoked when `Comcat` tries to disconnect to your backend.
    *
    * Don't permanently dispose anything here,
-   * because your pump may be rearranged connecting again.
+   * because your pump may be rescheduled connecting again.
    *
    * @virtual
    * @memberof ComcatPump
@@ -195,19 +208,41 @@ export class ComcatPump {
     this.rpc.close();
   };
 
-  private onRaftBecomeLeader = () => {
-    // FIXME connect过程有可能是异步的
-    this.onConnect();
-    this.status = 'working';
+  private onRaftBecomeLeader = async () => {
+    let isSucceeded: boolean | void;
 
-    debug.log(`pump "${this.category}-${this.id}" activated.`);
+    try {
+      isSucceeded = (await this.onConnect()) ?? true;
+    } catch (error) {
+      isSucceeded = false;
+    }
+
+    if (!isSucceeded) {
+      /**
+       * If connection is failed, roll back to candidate.
+       *
+       * It will either transfer the leadership to another tab,
+       * or retry after election timeout.
+       */
+      this.raft.stepdown();
+
+      debug.warn(`Connection failed. Retrying...`);
+    } else {
+      this.status = 'working';
+
+      debug.log(`pump "${this.tag}" activated.`);
+    }
   };
 
   private onRaftBecomeCandidate = () => {
+    if (this.status !== 'working') {
+      return;
+    }
+
     this.onDisconnect();
     this.status = 'sleep';
 
-    debug.log(`pump "${this.category}-${this.id}" inactivated.`);
+    debug.log(`pump "${this.tag}" inactivated.`);
   };
 
   private onRaftElect = (req: RaftRequestElect): Promise<RaftResponseElect> => {

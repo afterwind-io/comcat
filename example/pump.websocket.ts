@@ -24,10 +24,15 @@ class WebsocketPump {
   }
 
   private onConnect() {
-    const ws = new WebSocket('wss://echo.websocket.org/');
-    ws.onmessage = this.onMessage.bind(this);
+    return new Promise((resolve, reject) => {
+      const ws = new WebSocket('wss://example.com/');
 
-    this.ws = ws;
+      ws.onopen = () => resolve(true);
+      ws.onerror = () => reject();
+      ws.onmessage = this.onMessage.bind(this);
+
+      this.ws = ws;
+    });
   }
 
   private onDisconnect() {

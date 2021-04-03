@@ -49,6 +49,18 @@ export class RaftActor<T> {
     this.elect();
   }
 
+  /**
+   * Rewind to candidate
+   *
+   * @memberof RaftActor
+   */
+  public stepdown() {
+    this.status = 'candidate';
+    this.onBecomeCandidate();
+
+    this.loop();
+  }
+
   public RequestMessaging(message: T): Promise<void> {
     return this.onMessaging({
       leaderId: this.id,

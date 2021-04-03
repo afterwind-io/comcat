@@ -73,6 +73,15 @@ export declare abstract class ComcatPump {
    *
    * Invoked when `Comcat` tries to connect to your backend.
    *
+   * You can fine-tune the inner behavior by returning a flag indicates
+   * whether the connection is successful.
+   *
+   * If the return value is `false`, or an error is raised,
+   * `Comcat` will either retry the connection after a short period of time,
+   * or schedule another tab to do the job.
+   *
+   * If no value is returned, `Comcat` will treat the result as successful anyway.
+   *
    * @virtual
    * @memberof ComcatPump
    */
@@ -85,7 +94,7 @@ export declare abstract class ComcatPump {
    * Invoked when `Comcat` tries to disconnect to your backend.
    *
    * Don't permanently dispose anything here,
-   * because your pump may be rearranged connecting again.
+   * because your pump may be rescheduled connecting again.
    *
    * @virtual
    * @memberof ComcatPump

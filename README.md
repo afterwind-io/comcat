@@ -214,12 +214,14 @@ Returns true if registry succeeds, or vice versa.
 #### ComcatPump.onConnect
 
 ```typescript
-public onConnect: () => void;
+public onConnect: () => Promise<boolean> | void;
 ```
 
 > :warning: **The default method is only a placeholder. Always override with your own callback.**
 
 Invoked when `Comcat` tries to connect to your backend. Basically your connection code goes here.
+
+You can fine-tune the inner behavior by returning a flag indicates whether the connection is successful. If the return value is `false`, or an error is raised, `Comcat` will either retry the connection after a short period of time, or schedule another tab to do the job. If no value is returned, `Comcat` will treat the result as successful anyway.
 
 #### ComcatPump.onDisconnect
 
@@ -236,7 +238,7 @@ Don't permanently dispose anything here, because your pump may be rescheduled co
 #### ComcatPump.pump
 
 ```typescript
-protected pump: (topic: string, data: any) => Promise<void>;
+public pump: (topic: string, data: any) => Promise<void>;
 ```
 
 Send the message with a specified topic.
@@ -623,7 +625,7 @@ NO.
 - [x] ~~Use Data URL to achieve inline SharedWorker;~~
 - [ ] Prevent creating multiple `pump` with same `category`;
 - [x] ~~Topic wildcard~~;
-- [ ] Deal with leader connection error;
+- [x] ~~Deal with leader connection error~~;
 
 ## License
 
