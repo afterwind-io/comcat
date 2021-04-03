@@ -5,18 +5,15 @@
 
 <!-- ![Downloads][download-badge] -->
 
-> :construction: Currently WIP. :construction:
->
-> It works fine but needs polishing. **Use with caution**.
-
 Share single connection between multiple browser tabs/windows and more.
 
 ## Introduction
 
 This library is currently aimed to solve a common problem:
 
-> I want to consume some messages pushed by the backend, but I don't want to
-> create a new connection every time I open a new tab/window.
+> I want to consume some messages pushed by the backend, but ...
+> - I don't want to create a new connection every time I open a new tab/window;
+> - Or, I want a single tab to receive the messages, and shared them between other tabs.
 
 `Comcat` offers some critical features around this topic, including:
 
@@ -59,7 +56,7 @@ const POLLING_INTERVAL = 60 * 1000;
 let intervalHandler = -1;
 
 /**
- * First we create a `pump` to receive messages from the backend.
+ * First we create a `pump` to pull messages from the backend.
  */
 const pump = new ComcatPump({
   category: 'example',
@@ -79,8 +76,8 @@ pump.onConnect = () => {
          * When messages come, push them to the consumer...
          * ...with a customized topic.
          */
-        this.pump.pump('Time', data.datetime);
-        this.pump.pump('Unix', data.unixtime);
+        pump.pump('Time', data.datetime);
+        pump.pump('Unix', data.unixtime);
       });
   }, POLLING_INTERVAL);
 };
@@ -104,7 +101,7 @@ pump.start();
 import { ComcatPipe } from 'comcat';
 
 /**
- * Then we create a `pipe` to receive messages from `pipe`s.
+ * Then we create a `pipe` to receive messages from `pump`s.
  */
 const pipe = new ComcatPipe({
   /**
@@ -249,7 +246,7 @@ The category of the message. It is used to help filtering messages in different 
 
 _`data`_:
 
-The content of the message. Can be anything that `SharedWorker` supports, but with some restrictions. Please see [_Transferring data to and from workers: further details_][mdn-transfer]
+The content of the message. Can be anything that `SharedWorker` supports, but with some restrictions. Please see [_Transferring data to and from workers: further details_][mdn-transfer].
 
 ### ComcatPipe
 
@@ -328,7 +325,7 @@ Specify the underlying implementation.
 
 By default `Comcat` uses `SharedWebworker` to share connection and send messages across tabs/windows. If `SharedWebworker` is not supported, `Comcat` will fall back to the `direct` mode.
 
-When running in `direct` Mode, all cross-tab features are disabled due to lack of cross-tab ability. The connection activated by `pump` is created per tab. The messages sent by `pump` are broadcasted back to the pipes on the same tab. Thus, it behaves just like a normal event bus.
+When running in `direct` Mode, all cross-tab features are disabled. The connection activated by `pump` is created per tab. The messages sent by `pump` are broadcasted back to the pipes on the same tab. Thus, it behaves just like a normal event bus.
 
 Usually you should just leave it be.
 
@@ -398,7 +395,7 @@ The magic working behind the scene is known as "Consensus Algorithm". With the c
 - Ensure a unique leader(tab) to connect to a backend and broadcast messages;
 - Re-elect if the leader(tab) is closed/freezed;
 
-Among the various algorithms, [Raft][raft] is relatively easy to understand and implement. However, it is designed for the purpose like building distributed log system, so it is still a little complicated against our needs. After all, we don't aim for strict safety. Besides, browser tabs are more likely to be opened and closed frequently, which is quite opposite to a stable cluster.
+Among the various algorithms, [Raft][raft] is relatively easy to understand and implement. However, it is designed for the purpose like building distributed log system, so it is still too complicated against our needs. After all, we don't aim for strict safety. Besides, browser tabs are more likely to be opened and closed frequently, which is quite opposite to a stable cluster.
 
 Eventually, a tailored version of Raft is applied. The distributed part of the algorithm is ditched, since a scheduler working on `SharedWorker` plays the role as a centralized coordinator, which can chop down all consensus procedure between tabs. The concept of `term` is kept to detect stale leader, thus help quickly recovering from abnormal situations.
 
@@ -419,17 +416,17 @@ Eventually, a tailored version of Raft is applied. The distributed part of the a
 
 ##### Dealer
 
-`Dealer`, aka the scheduler, is responsible for:
+`Dealer`, aka the scheduler, is responsible for...
 
-- Check if the election from `Candidate` is valid;
-- Check if the heartbeat from `Leader` is valid;
-- Check if `Actor` has the permission to broadcast messages;
+- Checking if the election from `Candidate` is valid;
+- Checking if the heartbeat from `Leader` is valid;
+- Checking if `Actor` has the permission to broadcast messages;
 
 ...according to the certain rules. Details see below.
 
 #### RPC
 
-The communication between `Actor` and `Dealer` is proceeded using remote procedure call(RPC), built on top of `SharedWorker` messaging mechanism. There are three types of RPCs.
+The communication between `Actor` and `Dealer` is proceeded using remote procedure call(RPC), built on top of `SharedWorker` messaging mechanism. There are three types of RPCs:
 
 ##### Election RPC
 
@@ -443,7 +440,7 @@ interface RaftRequestElect {
   candidateId: string;
 }
 interface RaftResponseElect {
-  // true if election succeed
+  // True if election succeed
   isGranted: boolean;
   // Dealer's term
   term: number;
@@ -460,7 +457,7 @@ interface RaftRequestHeartbeat {
   term: number;
 }
 interface RaftResponseHeartbeat {
-  // true if there's another valid leader
+  // True if there's another valid leader
   isExpired: boolean;
   // Dealer's term
   term: number;
