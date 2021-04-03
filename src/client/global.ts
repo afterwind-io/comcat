@@ -35,9 +35,9 @@ export const ComcatGlobal = {
    * messages across tabs/windows. If `SharedWebworker` is not supported,
    * `Comcat` will fall back to the `direct` mode.
    * 
-   * When running in `direct` Mode, all cross-tab features are disabled due to
-   * lack of cross-tab ability. The connection activated by `pump` is created
-   * per tab. The messages sent by `pump` are broadcasted back to the pipes
+   * When running in `direct` Mode, all cross-tab features are disabled.
+   * The connection activated by `pump` is created per tab.
+   * The messages sent by `pump` are broadcasted back to the pipes
    * on the same tab. Thus, it behaves just like a normal event bus.
    *
    * @param {ComcatWorkingMode} mode
