@@ -50,43 +50,79 @@ yarn add comcat
 For demonstration purpose, here we implement a minimal example to share time information across tabs.
 
 ```typescript
-// example.ts
+//examplePump.ts
 
-import { ComcatPump, ComcatPipe } from 'comcat';
+import { ComcatPump } from 'comcat';
 
-class TimePollingPump extends ComcatPump {
-  private readonly interval = 60 * 1000;
-  private intervalHandler = -1;
+const POLLING_INTERVAL = 60 * 1000;
 
-  protected connect() {
-    this.intervalHandler = setInterval(() => {
-      fetch('http://worldtimeapi.org/api/ip')
-        .then((res) => {
-          return res.json();
-        })
-        .then((data) => {
-          this.pump('Time', data.datetime);
-          this.pump('Unix', data.unixtime);
-        });
-    }, this.interval);
-  }
+let intervalHandler = -1;
 
-  protected disconnect() {
-    clearInterval(this.intervalHandler);
-  }
-}
-
-const pump = new TimePollingPump({
+/**
+ * First we create a `pump` to receive messages from the backend.
+ */
+const pump = new ComcatPump({
   category: 'example',
 });
-pump.start();
 
+/**
+ * Define how we connect to the backend.
+ */
+pump.onConnect = () => {
+  intervalHandler = setInterval(() => {
+    fetch('http://worldtimeapi.org/api/ip')
+      .then((res) => {
+        return res.json();
+      })
+      .then((data) => {
+        /**
+         * When messages come, push them to the consumer...
+         * ...with a customized topic.
+         */
+        this.pump.pump('Time', data.datetime);
+        this.pump.pump('Unix', data.unixtime);
+      });
+  }, POLLING_INTERVAL);
+};
+
+/**
+ * Define how we disconnect from it.
+ */
+pump.onDisconnect = () => {
+  clearInterval(intervalHandler);
+};
+
+/**
+ * Start the engine!
+ */
+pump.start();
+```
+
+```typescript
+// examplePipe.ts
+
+import { ComcatPipe } from 'comcat';
+
+/**
+ * Then we create a `pipe` to receive messages from `pipe`s.
+ */
 const pipe = new ComcatPipe({
+  /**
+   * Choose the topic we care about...
+   */
   topic: 'Time',
 });
+
 pipe.onMessage = (topic, data) => {
+  /**
+   * ...And do something with the messages.
+   */
   console.log('The current time is: ', data);
 };
+
+/**
+ * Start rolling!
+ */
 pipe.start();
 ```
 
@@ -195,7 +231,7 @@ public onDisconnect: () => void;
 
 Invoked when `Comcat` tries to disconnect to your backend. Basically your disconnection code goes here.
 
-Don't permanently dispose anything here, because your pump may be rearranged connecting again.
+Don't permanently dispose anything here, because your pump may be rescheduled connecting again.
 
 #### ComcatPump.pump
 
@@ -586,7 +622,7 @@ NO.
 - [x] ~~Use simplified raft-like consensus algorithm to ensure single connection;~~
 - [x] ~~Use Data URL to achieve inline SharedWorker;~~
 - [ ] Prevent creating multiple `pump` with same `category`;
-- [x] Topic wildcard;
+- [x] ~~Topic wildcard~~;
 - [ ] Deal with leader connection error;
 
 ## License
