@@ -42,7 +42,7 @@ export declare class ComcatPipe {
    * @virtual
    * @memberof ComcatPipe
    */
-  onMessage(topic: string, data: unknown): void;
+  onMessage: (topic: string, data: unknown) => void;
 }
 
 export interface ComcatPumpOptions {
