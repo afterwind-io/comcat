@@ -1,4 +1,4 @@
-import { ComcatRPC } from '../client/rpc';
+import { ComcatRPC } from '../../rpc';
 import {
   ComcatBroadcastMessage,
   ComcatCommandPipeClose,
@@ -6,7 +6,7 @@ import {
   ComcatCommandPipeRegister,
   ComcatCommandReplies,
   ComcatCommands,
-} from '../type';
+} from '../../type';
 
 interface ComcatPipeRegistry {
   id: string;

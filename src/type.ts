@@ -5,7 +5,7 @@ import {
   RaftResponseElect,
   RaftResponseHeartbeat,
   RaftResponseMessaging,
-} from './client/raft';
+} from './raft';
 
 export interface ComcatTransport {
   connect(): void;

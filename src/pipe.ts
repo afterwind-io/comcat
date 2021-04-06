@@ -2,10 +2,10 @@ import {
   ComcatCommands,
   ComcatCommandReplies,
   ComcatCommandPipeReceive,
-} from '../type';
+} from './type';
 import { Debug } from './debug';
 import { ComcatRPC } from './rpc';
-import { getTransport } from './transport';
+import { getTransport } from './impl/transport';
 import { getUniqueId } from './util';
 
 const debug = new Debug('comcat-pipe');

@@ -7,7 +7,7 @@ const webWorkerLoader = require(path.resolve(
 ));
 
 export default {
-  input: 'src/client/index.ts',
+  input: 'src/index.ts',
   output: {
     dir: 'dev/comcat',
   },
@@ -17,7 +17,7 @@ export default {
       extensions: ['.ts'],
     }),
     typescript({
-      tsconfig: 'src/client/tsconfig.json',
+      tsconfig: 'src/tsconfig.json',
     }),
   ],
 };

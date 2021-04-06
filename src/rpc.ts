@@ -1,4 +1,4 @@
-import { ComcatRPCCommand, ComcatRPCProtocol, ComcatTransport } from '../type';
+import { ComcatRPCCommand, ComcatRPCProtocol, ComcatTransport } from './type';
 import { blackhole } from './util';
 
 const DEFAULT_TIMEOUT = 1000 * 60;

@@ -1,5 +1,5 @@
-import { ComcatCommandReplies, ComcatCommands } from '../type';
-import { ComcatRPC } from '../client/rpc';
+import { ComcatCommandReplies, ComcatCommands } from '../../type';
+import { ComcatRPC } from '../../rpc';
 import { ComcatPipeScheduler } from './pipe';
 import { ComcatPumpScheduler } from './pump';
 import { Transport } from './transport';

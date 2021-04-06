@@ -1,8 +1,8 @@
 import { ComcatTransport } from '../type';
-import { Debug } from './debug';
-import { global } from './global';
-import { ComcatTransportDirect } from './impl/direct';
-import { ComcatTransportSharedWorker } from './impl/worker';
+import { Debug } from '../debug';
+import { global } from '../global';
+import { ComcatTransportDirect } from './direct';
+import { ComcatTransportSharedWorker } from './worker';
 
 const debug = new Debug('comcat-transport');
 

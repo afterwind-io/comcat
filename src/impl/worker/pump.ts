@@ -3,9 +3,9 @@ import {
   RaftResponseElect,
   RaftResponseHeartbeat,
   RaftResponseMessaging,
-} from '../client/raft';
-import { ComcatRPC } from '../client/rpc';
-import { blackhole } from '../client/util';
+} from '../../raft';
+import { ComcatRPC } from '../../rpc';
+import { blackhole } from '../../util';
 import {
   ComcatBroadcastMessage,
   ComcatCommandPumpClose,
@@ -16,7 +16,7 @@ import {
   ComcatCommandReplies,
   ComcatCommands,
   ComcatPumpMode,
-} from '../type';
+} from '../../type';
 
 interface ComcatPumpRegistry {
   id: string;

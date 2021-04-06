@@ -3,9 +3,9 @@ import {
   ComcatCommandReplies,
   ComcatPumpMode,
   ComcatBroadcastMessage,
-} from '../type';
+} from './type';
 import { ComcatRPC } from './rpc';
-import { getTransport } from './transport';
+import { getTransport } from './impl/transport';
 import { Debug } from './debug';
 import { getUniqueId } from './util';
 import {

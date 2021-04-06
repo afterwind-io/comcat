@@ -1,5 +1,5 @@
-import InlineWorker from 'web-worker:../../worker/index';
-import { ComcatTransport, ComcatRPCProtocol } from '../../type';
+import InlineWorker from 'web-worker:./worker/index';
+import { ComcatTransport, ComcatRPCProtocol } from '../type';
 import { Debug } from '../debug';
 import { blackhole } from '../util';
 

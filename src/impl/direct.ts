@@ -7,7 +7,7 @@ import {
   ComcatCommands,
   ComcatRPCProtocol,
   ComcatTransport,
-} from '../../type';
+} from '../type';
 import { Debug } from '../debug';
 import { RaftResponseElect, RaftResponseHeartbeat } from '../raft';
 import { ComcatRPC } from '../rpc';
