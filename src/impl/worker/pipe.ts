@@ -1,39 +1,17 @@
 import { ComcatRPC } from '../../rpc';
 import {
   ComcatBroadcastMessage,
-  ComcatCommandPipeClose,
-  ComcatCommandPipeReceive,
   ComcatCommandPipeRegister,
   ComcatCommandReplies,
   ComcatCommands,
 } from '../../type';
-
-interface ComcatPipeRegistry {
-  id: string;
-  topic: RegExp | null;
-  rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
-}
+import { PipeScheduler } from '../shared/pipeScheduler';
 
 export class ComcatPipeScheduler {
-  private pipes: ComcatPipeRegistry[] = [];
+  private scheduler: PipeScheduler = new PipeScheduler();
 
   public broadcast(message: ComcatBroadcastMessage) {
-    const topic = message.topic;
-
-    for (const pipe of this.pipes) {
-      const topicFilter = pipe.topic;
-      if (topicFilter && !topicFilter.test(topic)) {
-        continue;
-      }
-
-      const command: ComcatCommandPipeReceive = {
-        name: 'pipe_receive',
-        oneshot: true,
-        params: message,
-      };
-
-      pipe.rpc.call(command);
-    }
+    return this.scheduler.broadcast(message);
   }
 
   public register(
@@ -42,39 +20,21 @@ export class ComcatPipeScheduler {
   ): boolean {
     const { id, topic } = cmd.params;
 
-    const pipe = this.pipes.find((p) => p.id === id);
-    if (pipe) {
-      return false;
+    const isSucceeded = this.scheduler.register(id, topic, rpc);
+    if (isSucceeded) {
+      rpc.onRemoteCall = this.onCall;
     }
 
-    const topicFilter = topic == null ? topic : new RegExp(topic);
-    const registry: ComcatPipeRegistry = {
-      id,
-      topic: topicFilter,
-      rpc,
-    };
-    this.pipes.push(registry);
-
-    rpc.onRemoteCall = this.onCall.bind(this);
-    return true;
+    return isSucceeded;
   }
 
-  private onCall(msg: ComcatCommands, reply: (payload: any) => void) {
-    switch (msg.name) {
+  private onCall = (command: ComcatCommands, reply: (payload: any) => void) => {
+    switch (command.name) {
       case 'pipe_close':
-        return this.onClose(msg);
+        return this.scheduler.unregister(command.params.id);
 
       default:
         break;
     }
-  }
-
-  private onClose(cmd: ComcatCommandPipeClose) {
-    const { id } = cmd.params;
-
-    const index = this.pipes.findIndex((p) => p.id === id);
-    if (index !== -1) {
-      this.pipes.splice(index, 1);
-    }
-  }
+  };
 }

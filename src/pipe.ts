@@ -5,7 +5,7 @@ import {
 } from './type';
 import { Debug } from './debug';
 import { ComcatRPC } from './rpc';
-import { getTransport } from './impl/transport';
+import { getTransport } from './impl';
 import { getUniqueId } from './util';
 
 const debug = new Debug('comcat-pipe');

@@ -16,12 +16,12 @@ export function getTransport(): ComcatTransport {
     return new ComcatTransportDirect();
   }
 
-  if (global.mode === 'legacy') {
-    return debug.panic(`Not implemented.`);
-  }
-
   if (global.mode === 'direct') {
     return new ComcatTransportDirect();
+  }
+
+  if (global.mode === 'legacy') {
+    return debug.panic(`Not implemented.`);
   }
 
   return debug.panic(`No such mode for "${global.mode}".`);

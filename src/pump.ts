@@ -5,7 +5,7 @@ import {
   ComcatBroadcastMessage,
 } from './type';
 import { ComcatRPC } from './rpc';
-import { getTransport } from './impl/transport';
+import { getTransport } from './impl';
 import { Debug } from './debug';
 import { getUniqueId } from './util';
 import {
