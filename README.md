@@ -148,7 +148,7 @@ it is pushed to the consumer.
 
 ## Recipes
 
-The repository contains several examples covering the basic usage. Please see [example/README.md](example/README.md)
+The repository contains several examples covering the basic usage. Please see [example/README.md][example-readme]
 
 ## APIs
 
@@ -648,6 +648,9 @@ NO.
 [npm]: https://www.npmjs.com/package/comcat
 [download-badge]: https://img.shields.io/npm/dt/comcat.svg
 [license-badge]: https://img.shields.io/npm/l/comcat.svg
+
+<!-- Project Links -->
+[example-readme]: https://github.com/afterwind-io/comcat/blob/main/example/README.md
 
 <!-- References -->
 
