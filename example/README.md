@@ -15,3 +15,8 @@ This directory contains several basic examples, covering some common use cases. 
 ## Pipe
 
 - [A pipe only send message when browser tab is active](pipe.activetab.ts)
+
+## General
+
+- [What if I still prefer the inheritance pattern?](general.inheritance.ts)
+- [Pipe, React Component and the Hooks](general.hook.tsx)
