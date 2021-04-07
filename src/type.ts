@@ -50,7 +50,6 @@ export interface ComcatCommandPumpClose {
   oneshot: true;
   params: {
     id: string;
-    category: string;
   };
 }
 export type ComcatCommandReplyPumpClose = {

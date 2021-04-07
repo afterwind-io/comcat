@@ -235,7 +235,7 @@ export class ComcatPump {
     this.rpc.call({
       name: 'pump_close',
       oneshot: true,
-      params: { id: this.id, category: this.category },
+      params: { id: this.id },
     });
     this.rpc.close();
 

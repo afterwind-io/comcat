@@ -93,7 +93,7 @@ export class ComcatPumpScheduler {
   }
 
   private onClose(cmd: ComcatCommandPumpClose) {
-    const { category, id } = cmd.params;
+    const { id } = cmd.params;
 
     let pump = this.pumps.get(id);
     if (pump) {
