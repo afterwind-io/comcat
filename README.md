@@ -12,6 +12,7 @@ Share single connection between multiple browser tabs/windows and more.
 This library is currently aimed to solve a common problem:
 
 > I want to consume some messages pushed by the backend, but ...
+>
 > - I don't want to create a new connection every time I open a new tab/window;
 > - Or, I want a single tab to receive the messages, and shared them between other tabs.
 
@@ -208,6 +209,18 @@ Because the connection is managed by `Comcat`, it may be postponed until schedul
 
 Returns true if registry succeeds, or vice versa.
 
+#### ComcatPump.stop
+
+```typescript
+public stop: () => void;
+```
+
+Close the pump and the underlying connection.
+
+In practice, `Comcat` will close the pump when the current tab is closed, so usually you wont need to trigger this by hand.
+
+If somehow you still want to do it yourself, please note that once the pump is closed, it is fully disposed and cannot be started again. In order to restarting a new pump with the same category, instantiate a new `ComcatPump`.
+
 #### ComcatPump.onConnect
 
 ```typescript
@@ -260,6 +273,7 @@ import { ComcatPipe } from 'comcat';
 const pipe = new ComcatPipe({
   topic: 'MyTopic',
 });
+
 pipe.onMessage = (topic, data) => {
   /**
    * Do some works with the data.
@@ -290,6 +304,16 @@ public start: () => Promise<boolean>;
 Register the pipe and start listening for the messages from the upstream.
 
 Returns true if registry succeeds, or vice versa.
+
+#### ComcatPipe.stop
+
+```typescript
+public stop: () => void;
+```
+
+Unregister the pipe and stop listening for the messages.
+
+It is strongly recommended that to prevent potential memory leaks, pipes should be closed immediately when they are no longer in use.
 
 #### ComcatPipe.onMessage
 

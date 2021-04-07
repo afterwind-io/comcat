@@ -6,7 +6,7 @@ import {
 import { Debug } from './debug';
 import { ComcatRPC } from './rpc';
 import { getTransport } from './impl';
-import { getUniqueId } from './util';
+import { blackhole, getUniqueId } from './util';
 
 const debug = new Debug('comcat-pipe');
 
@@ -46,7 +46,7 @@ export class ComcatPipe {
 
     this.id = getUniqueId();
 
-    window.addEventListener('unload', this.onDispose.bind(this));
+    window.addEventListener('unload', this.onClose.bind(this));
   }
 
   /**
@@ -76,6 +76,18 @@ export class ComcatPipe {
     } catch (error) {
       return false;
     }
+  }
+
+  /**
+   * Unregister the pipe and stop listening for the messages.
+   * 
+   * It is strongly recommended that to prevent potential memory leaks,
+   * pipes should be closed immediately when they are no longer in use.
+   *
+   * @memberof ComcatPipe
+   */
+  public stop() {
+    this.onClose();
   }
 
   /**
@@ -110,7 +122,9 @@ export class ComcatPipe {
     }
   }
 
-  private onDispose() {
+  private onClose() {
+    this.onMessage = blackhole;
+
     this.rpc.call({
       name: 'pipe_close',
       oneshot: true,

@@ -57,8 +57,13 @@ export class PipeScheduler {
 
   public unregister(id: string) {
     const index = this.pipes.findIndex((p) => p.id === id);
-    if (index !== -1) {
-      this.pipes.splice(index, 1);
+    if (index === -1) {
+      return;
     }
+
+    const pipe = this.pipes[index];
+    pipe.rpc.close();
+
+    this.pipes.splice(index, 1);
   }
 }

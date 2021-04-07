@@ -7,7 +7,7 @@ import {
 import { ComcatRPC } from './rpc';
 import { getTransport } from './impl';
 import { Debug } from './debug';
-import { getUniqueId } from './util';
+import { blackhole, getUniqueId } from './util';
 import {
   RaftActor,
   RaftRequestElect,
@@ -67,7 +67,7 @@ export class ComcatPump {
   private readonly mode: ComcatPumpMode;
   private readonly rpc: ComcatRPC<ComcatCommands, ComcatCommandReplies>;
   private readonly raft: RaftActor<ComcatBroadcastMessage>;
-  private status: 'idle' | 'sleep' | 'working' = 'idle';
+  private status: 'idle' | 'sleep' | 'working' | 'closed' = 'idle';
 
   public constructor(options: ComcatPumpOptions) {
     const { category, mode = 'unique' } = options;
@@ -86,7 +86,7 @@ export class ComcatPump {
 
     this.id = getUniqueId();
 
-    window.addEventListener('unload', this.onDispose);
+    window.addEventListener('unload', this.onClose);
   }
 
   private get tag(): string {
@@ -154,7 +154,7 @@ export class ComcatPump {
     }
 
     const category = this.category;
-    if (category in ComcatPump.categoryRegistry) {
+    if (ComcatPump.categoryRegistry[category]) {
       debug.error(`Can not create multiple pumps with category "${category}"`);
 
       return false;
@@ -185,6 +185,23 @@ export class ComcatPump {
   }
 
   /**
+   * Close the pump and the underlying connection.
+   *
+   * In practice, `Comcat` will close the pump when the current tab is closed,
+   * so usually you wont need to trigger this by hand.
+   *
+   * If somehow you still want to do it yourself, please note that once the pump
+   * is closed, it is fully disposed and cannot be started again.
+   * In order to restarting a new pump with the same category,
+   * instantiate a new `ComcatPump`.
+   *
+   * @memberof ComcatPump
+   */
+  public stop() {
+    this.onClose();
+  }
+
+  /**
    * Send the message with a specified topic.
    *
    * @param {string} topic
@@ -207,8 +224,13 @@ export class ComcatPump {
     return this.raft.RequestMessaging({ topic, data });
   }
 
-  private onDispose = () => {
+  private onClose = () => {
     this.onDisconnect();
+
+    this.onConnect = blackhole;
+    this.onDisconnect = blackhole;
+
+    this.raft.stop();
 
     this.rpc.call({
       name: 'pump_close',
@@ -216,6 +238,12 @@ export class ComcatPump {
       params: { id: this.id, category: this.category },
     });
     this.rpc.close();
+
+    ComcatPump.categoryRegistry[this.category] = false;
+
+    this.status = 'closed';
+
+    debug.log(`pump "${this.tag}" closed.`);
   };
 
   private onRaftBecomeLeader = async () => {

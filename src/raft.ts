@@ -1,4 +1,4 @@
-import { getUniqueId } from './util';
+import { blackhole, getUniqueId } from './util';
 
 const INTERVAL_ELECTION = 5 * 1000;
 const INTERVAL_HEARTBEAT = 3 * 1000;
@@ -47,6 +47,16 @@ export class RaftActor<T> {
 
   public start() {
     this.elect();
+  }
+
+  public stop() {
+    this.onBecomeLeader = blackhole;
+    this.onBecomeCandidate = blackhole;
+    this.onElect = blackhole;
+    this.onHeartbeat = blackhole;
+    this.onMessaging = blackhole;
+
+    window.clearTimeout(this.loopHandler);
   }
 
   /**

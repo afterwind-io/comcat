@@ -9,7 +9,7 @@ const debug = new Debug('comcat-transport-direct');
 export class ComcatTransportDirectSchedulerProxy implements ComcatTransport {
   public onMessage: (message: ComcatRPCProtocol) => void = blackhole;
 
-  private proxy: ComcatTransportDirect;
+  private proxy: ComcatTransportDirect | null;
 
   public constructor(proxy: ComcatTransportDirect) {
     this.proxy = proxy;
@@ -21,12 +21,12 @@ export class ComcatTransportDirectSchedulerProxy implements ComcatTransport {
   }
 
   public disconnect(): void {
-    // Nothing
+    this.proxy = null;
   }
 
   public postMessage(message: any): void {
     debug.log(`[loop-back]`, message);
 
-    setTimeout(() => this.proxy.onMessage(message));
+    setTimeout(() => this.proxy?.onMessage(message));
   }
 }

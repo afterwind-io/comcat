@@ -18,9 +18,9 @@ export class ComcatRPC<
     reply: (payload: any) => void
   ) => void = blackhole;
 
-  private readonly callbacks: { [ack: number]: DeferredCallback } = {};
   private readonly timeout: number;
   private readonly transport: ComcatTransport;
+  private callbacks: { [ack: number]: DeferredCallback } = {};
   private ack: number = -1;
 
   public constructor(
@@ -56,8 +56,10 @@ export class ComcatRPC<
   }
 
   public close() {
+    this.onRemoteCall = blackhole;
+    this.callbacks = {};
+
     this.transport.disconnect();
-    this.transport.onMessage = blackhole;
   }
 
   private createDeferredPromise(ack: number): Promise<unknown> {

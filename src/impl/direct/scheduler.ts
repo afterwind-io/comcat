@@ -41,12 +41,11 @@ class ComcatDirectScheduler {
         return reply(resHeartbeat);
       case 'pump_raft_messaging':
         const message = command.params.raft.message;
-        this.pipeScheduler.broadcast(message);
-
-        return reply(void 0);
+        return reply(this.pipeScheduler.broadcast(message));
 
       // We don't keep track of pumps so just drop it.
       case 'pump_close':
+        rpc.close();
         break;
 
       case 'pipe_register':

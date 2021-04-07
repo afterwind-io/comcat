@@ -28,6 +28,15 @@ export declare class ComcatPipe {
    */
   start(): Promise<boolean>;
   /**
+   * Unregister the pipe and stop listening for the messages.
+   *
+   * It is strongly recommended that to prevent potential memory leaks,
+   * pipes should be closed immediately when they are no longer in use.
+   *
+   * @memberof ComcatPipe
+   */
+  stop(): void;
+  /**
    * **The default method is only a placeholder. Always override with your own.**
    *
    * ---
@@ -110,6 +119,20 @@ export declare abstract class ComcatPump {
    * @memberof ComcatPump
    */
   start(): Promise<boolean>;
+  /**
+   * Close the pump and the underlying connection.
+   *
+   * In practice, `Comcat` will close the pump when the current tab is closed,
+   * so usually you wont need to trigger this by hand.
+   *
+   * If somehow you still want to do it yourself, please note that once the pump
+   * is closed, it is fully disposed and cannot be started again.
+   * In order to restarting a new pump with the same category,
+   * instantiate a new `ComcatPump`.
+   *
+   * @memberof ComcatPump
+   */
+  stop(): void;
   /**
    * Send the message with a specified topic.
    *

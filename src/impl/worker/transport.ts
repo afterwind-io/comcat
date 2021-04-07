@@ -4,7 +4,7 @@ import { ComcatRPCProtocol, ComcatTransport } from '../../type';
 export class Transport implements ComcatTransport {
   public onMessage: (message: ComcatRPCProtocol) => void = blackhole;
 
-  private port: MessagePort;
+  private port: MessagePort | null;
 
   public constructor(port: MessagePort) {
     this.port = port;
@@ -16,13 +16,14 @@ export class Transport implements ComcatTransport {
   }
 
   public disconnect() {
-    // Do Nothing
+    this.onMessage = blackhole;
+    this.port = null;
   }
 
   public postMessage(message: any) {
     console.log(`[out]`, message);
 
-    this.port.postMessage(message);
+    this.port?.postMessage(message);
   }
 
   private onPortMessage(event: MessageEvent<any>) {

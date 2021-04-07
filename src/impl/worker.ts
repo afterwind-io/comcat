@@ -8,7 +8,7 @@ const debug = new Debug('comcat-transport-worker');
 export class ComcatTransportSharedWorker implements ComcatTransport {
   public onMessage: (message: ComcatRPCProtocol) => void = blackhole;
 
-  private readonly worker: SharedWorker;
+  private worker: SharedWorker | null;
 
   public constructor() {
     this.worker = new InlineWorker();
@@ -16,17 +16,20 @@ export class ComcatTransportSharedWorker implements ComcatTransport {
   }
 
   public connect() {
-    this.worker.port.start();
+    this.worker?.port.start();
   }
 
   public disconnect() {
-    this.worker.port.close();
+    this.onMessage = blackhole;
+
+    this.worker?.port.close();
+    this.worker = null;
   }
 
   public postMessage(message: any) {
     debug.log(`[out]`, message);
 
-    this.worker.port.postMessage(message);
+    this.worker?.port.postMessage(message);
   }
 
   private onPortMessage(event: MessageEvent<any>) {
