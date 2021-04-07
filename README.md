@@ -122,6 +122,11 @@ pipe.onMessage = (topic, data) => {
  * Start rolling!
  */
 pipe.start();
+
+/**
+ * Don't forget to dispose the pipe when it is no longer used.
+ */
+// pipe.stop();
 ```
 
 ## The Concepts
@@ -650,6 +655,7 @@ NO.
 [license-badge]: https://img.shields.io/npm/l/comcat.svg
 
 <!-- Project Links -->
+
 [example-readme]: https://github.com/afterwind-io/comcat/blob/main/example/README.md
 
 <!-- References -->

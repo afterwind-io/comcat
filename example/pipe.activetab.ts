@@ -19,3 +19,8 @@ pipe.onMessage = (topic: string, data: any) => {
 };
 
 pipe.start();
+
+/**
+ * Don't forget to dispose the pipe when it is no longer used.
+ */
+// pipe.stop();
