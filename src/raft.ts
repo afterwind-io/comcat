@@ -41,7 +41,7 @@ export class RaftActor<T> {
 
   private loopHandler: number = -1;
 
-  public get IsLeader(): boolean {
+  public get isLeader(): boolean {
     return this.status === 'leader';
   }
 

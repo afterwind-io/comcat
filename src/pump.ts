@@ -217,7 +217,7 @@ export class ComcatPump {
    * @memberof ComcatPump
    */
   public async pump(topic: string, data: any): Promise<void> {
-    if (!this.raft.IsLeader) {
+    if (!this.raft.isLeader) {
       return;
     }
 
