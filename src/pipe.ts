@@ -10,7 +10,14 @@ import { blackhole, getUniqueId } from './util';
 
 const debug = new Debug('comcat-pipe');
 
-interface ComcatPipeOptions {
+/**
+ * Options for creating a `ComcatPipe`.
+ *
+ * @public
+ * @export
+ * @interface ComcatPipeOptions
+ */
+export interface ComcatPipeOptions {
   /**
    * The expected category of the messages.
    *
@@ -27,6 +34,7 @@ interface ComcatPipeOptions {
 /**
  * The base class for constructing `Comcat` pipes.
  *
+ * @public
  * @export
  * @class ComcatPipe
  */
@@ -80,7 +88,7 @@ export class ComcatPipe {
 
   /**
    * Unregister the pipe and stop listening for the messages.
-   * 
+   *
    * It is strongly recommended that to prevent potential memory leaks,
    * pipes should be closed immediately when they are no longer in use.
    *

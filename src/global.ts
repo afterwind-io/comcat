@@ -1,6 +1,16 @@
 import { DebugLevel, DEBUG_SILENCE, DEBUG_VERBOSE, DEBUG_WARN } from './consts';
 
-type ComcatWorkingMode = 'default' | 'legacy' | 'direct';
+/**
+ * The definition for the underlying implementation of `Comcat`.
+ *
+ * - "default": use `SharedWebworker`. The default behavior;
+ * - "legacy": **DO NOT USE** Not implemented yet;
+ * - "direct": use tab-isolated messaging. See below;
+ *
+ * @public
+ * @export
+ */
+export type ComcatWorkingMode = 'default' | 'legacy' | 'direct';
 
 interface ComcatGlobal {
   debugLevel: DebugLevel;
@@ -12,6 +22,12 @@ export const global: ComcatGlobal = {
   mode: 'default',
 };
 
+/**
+ * A set of interfaces to control how `Comcat` works.
+ *
+ * @public
+ * @export
+ */
 export const ComcatGlobal = {
   /**
    * Determines whether enabling the full debug logging,
@@ -27,14 +43,14 @@ export const ComcatGlobal = {
   /**
    * Specify the underlying implementation.
    *
-   * - "default": use `SharedWebworker`. The *default* behavior;
+   * - "default": use `SharedWebworker`. The default behavior;
    * - "legacy": **DO NOT USE** Not implemented yet;
    * - "direct": use tab-isolated messaging. See below;
    *
    * By default `Comcat` uses `SharedWebworker` to share connection and send
    * messages across tabs/windows. If `SharedWebworker` is not supported,
    * `Comcat` will fall back to the `direct` mode.
-   * 
+   *
    * When running in `direct` Mode, all cross-tab features are disabled.
    * The connection activated by `pump` is created per tab.
    * The messages sent by `pump` are broadcasted back to the pipes

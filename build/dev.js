@@ -18,6 +18,11 @@ export default {
     }),
     typescript({
       tsconfig: 'src/tsconfig.json',
+      tsconfigOverride: {
+        compilerOptions: {
+          declaration: false,
+        },
+      },
     }),
   ],
 };

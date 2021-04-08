@@ -25,6 +25,7 @@
   ],
   "main": "dist/comcat.js",
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.13.4",
     "http-server": "^0.12.3",
     "rollup": "^2.38.3",
     "rollup-plugin-typescript2": "^0.29.0",
@@ -38,7 +39,7 @@
     "prepublishOnly": "rm -rf ./dist&&npm run prod&&npm run typing",
     "prod": "rollup -c build/prod.js",
     "server": "http-server dev -p 9001 -c-1",
-    "typing": "cp typing/comcat.d.ts dist"
+    "typing": "tsc --emitDeclarationOnly&&api-extractor run --local --verbose"
   },
   "license": "MIT"
 }

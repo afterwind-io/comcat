@@ -20,7 +20,14 @@ import {
 
 const debug = new Debug('comcat-pump');
 
-interface ComcatPumpOptions {
+/**
+ * Options for creating a `ComcatPump`.
+ *
+ * @public
+ * @export
+ * @interface ComcatPumpOptions
+ */
+export interface ComcatPumpOptions {
   /**
    * An identifier to classify different message sources.
    *
@@ -47,6 +54,7 @@ interface ComcatPumpOptions {
    * as soon as this pump starts.
    *
    * @deprecated
+   * @alpha
    * @type {ComcatPumpMode}
    * @memberof ComcatPumpOptions
    */
@@ -56,6 +64,7 @@ interface ComcatPumpOptions {
 /**
  * The base class for constructing `Comcat` pumps.
  *
+ * @public
  * @export
  * @class ComcatPump
  */

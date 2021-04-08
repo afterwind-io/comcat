@@ -26,6 +26,9 @@ export interface ComcatRPCCommand {
   params?: any;
 }
 
+/**
+ * @alpha
+ */
 export type ComcatPumpMode = 'standalone' | 'unique';
 
 export interface ComcatBroadcastMessage {
