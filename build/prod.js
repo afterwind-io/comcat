@@ -8,9 +8,17 @@ const webWorkerLoader = require(path.resolve(
 
 export default {
   input: 'src/index.ts',
-  output: {
-    file: 'dist/comcat.js',
-  },
+  output: [
+    {
+      file: 'dist/comcat.es.js',
+      format: 'es',
+    },
+    {
+      file: 'dist/comcat.js',
+      format: 'umd',
+      name: 'Comcat',
+    },
+  ],
   plugins: [
     webWorkerLoader({
       targetPlatform: 'browser',
@@ -20,6 +28,7 @@ export default {
       tsconfig: 'src/tsconfig.json',
       tsconfigOverride: {
         compilerOptions: {
+          target: 'es5',
           declaration: false,
           removeComments: true,
         },

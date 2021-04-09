@@ -24,6 +24,8 @@
     "dist/"
   ],
   "main": "dist/comcat.js",
+  "unpkg": "dist/comcat.js",
+  "module": "dist/comcat.es.js",
   "devDependencies": {
     "@microsoft/api-extractor": "^7.13.4",
     "http-server": "^0.12.3",
