@@ -8,12 +8,19 @@ const debug = new Debug('comcat-transport');
 
 export function getTransport(): ComcatTransport {
   if (global.mode === 'default') {
-    if (window.SharedWorker) {
-      return new ComcatTransportSharedWorker();
+    if (!window.SharedWorker) {
+      debug.warn('SharedWorker is not supported. Fall back to direct mode.');
+      return new ComcatTransportDirect();
     }
 
-    debug.warn('SharedWorker is not supported. Fall back to direct mode.');
-    return new ComcatTransportDirect();
+    try {
+      return new ComcatTransportSharedWorker();
+    } catch (error) {
+      console.error(error);
+
+      debug.warn('Failed to construct SharedWorker. Fall back to direct mode.');
+      return new ComcatTransportDirect();
+    }
   }
 
   if (global.mode === 'direct') {
